@@ -72,15 +72,27 @@ def appear(t, dur=0.15):
     return f"animation:in {dur}s linear {t:.2f}s forwards"
 
 
-def frame(h, title=None):
-    out = [f'<rect x="0.5" y="0.5" width="{W - 1}" height="{h - 1}" rx="6" fill="{BG}" stroke="{LINE}"/>']
-    if title is not None:
-        out.append(f'<path d="M0.5 32V6.5a6 6 0 0 1 6-6h{W - 13}a6 6 0 0 1 6 6V32z" fill="{BAR}"/>')
-        out.append(f'<line x1="0.5" y1="32" x2="{W - 0.5}" y2="32" stroke="{LINE}"/>')
-        for i, c in enumerate((RED, YEL, GRN)):
-            out.append(f'<circle cx="{20 + i * 18}" cy="16.5" r="5.5" fill="{c}" fill-opacity="0.85"/>')
-        tl = len(title) * cw(12)
-        out.append(text(W / 2 - tl / 2, 20.5, [(title, "d")], fs=12))
+TITLE = "levi@kali: ~"
+BAR_H = 34
+TOP = BAR_H + 30  # baseline of the first prompt line
+
+
+def frame(h, title=TITLE):
+    """A Linux terminal window: app icon on the left, title centered, minimize / maximize / close on the right."""
+    out = [f'<rect x="0.5" y="0.5" width="{W - 1}" height="{h - 1}" rx="6" fill="{BG}" stroke="{LINE}"/>',
+           f'<path d="M0.5 {BAR_H}V6.5a6 6 0 0 1 6-6h{W - 13}a6 6 0 0 1 6 6V{BAR_H}z" fill="{BAR}"/>',
+           f'<line x1="0.5" y1="{BAR_H}" x2="{W - 0.5}" y2="{BAR_H}" stroke="{LINE}"/>']
+    # terminal app icon
+    out.append(f'<rect x="14.5" y="10.5" width="18" height="14" rx="2.5" fill="none" stroke="{DIM}" stroke-width="1.3"/>'
+               f'<path d="M18.5 14.5l3 2.5-3 2.5M23 20.5h5" fill="none" stroke="{TXT}" stroke-width="1.3" '
+               f'stroke-linecap="round" stroke-linejoin="round"/>')
+    tl = len(title) * cw(12)
+    out.append(text(W / 2 - tl / 2, 21.5, [(title, "d")], fs=12))
+    cy = BAR_H / 2
+    controls = [f'M{W - 86} {cy + 4}h10',  # minimize
+                f'M{W - 56} {cy - 5}h10v10h-10z',  # maximize
+                f'M{W - 26} {cy - 5}l10 10M{W - 16} {cy - 5}l-10 10']  # close
+    out.append(f'<path d="{"".join(controls)}" fill="none" stroke="{TXT}" stroke-width="1.3" stroke-linecap="round"/>')
     return out
 
 
@@ -186,11 +198,11 @@ def hero():
         "███████╗███████╗ ╚████╔╝ ██║",
     ]
     x = 24
-    h = 380
-    b = frame(h, "levi@kali: ~")
-    b += kali_prompt(x, 62, 0.2, [("figlet", "g"), (" levi ", "t"), ("|", "t"), (" lolcat", "g")], 0.6, 1.2, "a")
+    h = 382
+    b = frame(h)
+    b += kali_prompt(x, TOP, 0.2, [("figlet", "g"), (" levi ", "t"), ("|", "t"), (" lolcat", "g")], 0.6, 1.2, "a")
     # lolcat: hue drifts along a diagonal; blocks drawn as rects since box glyphs render unevenly
-    cx, cy, top = 12, 17, 112
+    cx, cy, top = 12, 17, TOP + 50
     for i, ln in enumerate(banner):
         shadow, solid = [], []
         for c, ch in enumerate(ln):
@@ -202,29 +214,45 @@ def hero():
             solid.append(f'<rect x="{px}" y="{py}" width="{cx + 0.6}" height="{cy + 1}" fill="{hsl(hue, 0.62, 0.64)}"/>')
         b.append(f'<g class="a" shape-rendering="crispEdges" style="{appear(1.95 + i * 0.06, 0.05)}">'
                  + "".join(shadow) + "".join(solid) + "</g>")
-    b += kali_prompt(x, 240, 2.5, [("whoami", "g")], 2.8, 0.5, "b")
-    b.append(text(x, 288, [("Levi", "h b"), (". Full stack dev who lives in the terminal and likes to see how things work.", "t")],
+    b += kali_prompt(x, TOP + 178, 2.5, [("whoami", "g")], 2.8, 0.5, "b")
+    b.append(text(x, TOP + 226, [("Levi", "h b"), (". Full stack dev who lives in the terminal and likes to see how things work.", "t")],
                   cls="a", style=appear(3.45, 0.01)))
-    b.append(text(x, 310, [("Still learning, one project at a time.", "d")],
+    b.append(text(x, TOP + 248, [("Still learning, one project at a time.", "d")],
                   cls="a", style=appear(3.55, 0.01)))
-    b += kali_prompt(x, 336, 3.8)
-    b.append(f'<rect x="{x + 4 * cw(14):.1f}" y="{336 + 22 - 12}" width="{cw(14):.1f}" height="16" fill="{TXT}" '
+    b += kali_prompt(x, TOP + 274, 3.8)
+    b.append(f'<rect x="{x + 4 * cw(14):.1f}" y="{TOP + 274 + 22 - 12}" width="{cw(14):.1f}" height="16" fill="{TXT}" '
              f'opacity="0" style="animation:blink 1.1s steps(1) 3.9s infinite"/>')
     return svg(h, b, "Terminal: figlet levi piped to lolcat, whoami. Levi, full stack dev who lives in the terminal. Still learning, one project at a time.")
 
 
 # ---------------------------------------------------------------- neofetch
 def neofetch():
-    # classic Tux: gray outline, light eyes, yellow beak and feet
-    tux = [
-        [("        .--.", "t")],
-        [("       |", "t"), ("o_o", "h"), (" |", "t")],
-        [("       |", "t"), (":_/", "y"), (" |", "t")],
-        [("      //   \\ \\", "t")],
-        [("     (|     | )", "t")],
-        [("    /'\\_   _/`\\", "t")],
-        [("    ", "t"), ("\\___)", "y"), ("=", "t"), ("(___/", "y")],
-    ]
+    # Tux as pixel art: ASCII penguins drift out of line when GitHub falls back to another font
+    tux = """
+.......KKKKKK.......
+......KKKKKKKK......
+.....KKKKKKKKKK.....
+.....KEEKKKKEEK.....
+.....KEPKKKKPEK.....
+.....KEEKKKKEEK.....
+.....KKYYYYYYKK.....
+....KKYYYYYYYYKK....
+....KKKYYYYYYKKK....
+...KKKWWYYYYWWKKK...
+...KKWWWWWWWWWWKK...
+..KKWWWWWWWWWWWWKK..
+..KKWWWWWWWWWWWWKK..
+.KKWWWWWWWWWWWWWWKK.
+.KKWWWWWWWWWWWWWWKK.
+.KKWWWWWWWWWWWWWWKK.
+.KKWWWWWWWWWWWWWWKK.
+..KKWWWWWWWWWWWWKK..
+.YYYKWWWWWWWWWWKYYY.
+YYYYYKWWWWWWWWKYYYYY
+YYYYYYKKKKKKKKYYYYYY
+.YYYYY........YYYYY.
+""".split()
+    tux_colors = {"K": "#3d444d", "E": HI, "P": BG, "W": HI, "Y": YEL}
     rows = [
         ("Role", "full stack developer"),
         ("OS", "Kali, BlackArch, Parrot OS, Windows"),
@@ -243,21 +271,28 @@ def neofetch():
         ("Certs", "Cisco Ethical Hacker, Cisco Endpoint Security"),
         ("Level", "always learning"),
     ]
-    h = 118 + len(rows) * 24 + 46
-    b = frame(h, "neofetch")
-    for i, ln in enumerate(tux):
-        b.append(text(44, 118 + (len(rows) - 1) * 12 - 63 + i * 21, ln, fs=16))
+    y0 = TOP + 56 + 44  # output starts under the prompt; header and rule take two lines
+    h = y0 + len(rows) * 24 + 40
+    b = frame(h)
+    b += kali_prompt(24, TOP, 0.1, [("neofetch", "g")], 0.3, 0.5, "n")
+    px = 9
+    # centered on the output block, from the user@host line down to the color bar
+    tx, ty = 46, y0 + (len(rows) * 24 - 48) / 2 - len(tux) * px / 2
+    cells = "".join(f'<rect x="{tx + c * px}" y="{ty + r * px:.1f}" width="{px}" height="{px}" fill="{tux_colors[ch]}"/>'
+                    for r, row in enumerate(tux) for c, ch in enumerate(row) if ch in tux_colors)
+    b.append(f'<g class="a" shape-rendering="crispEdges" style="{appear(0.95, 0.05)}">{cells}</g>')
     ix, vx = 270, 270 + 11 * cw(14)
-    b.append(text(ix, 72, [("levi", "bl b"), ("@", "t"), ("Levi-crown", "bl b")]))
-    b.append(text(ix, 92, [("-" * 15, "d")]))
+    st = appear(0.95, 0.01)
+    b.append(text(ix, y0 - 44, [("levi", "bl b"), ("@", "t"), ("kali", "bl b")], cls="a", style=st))
+    b.append(text(ix, y0 - 24, [("-" * 9, "d")], cls="a", style=st))
     for i, (k, v) in enumerate(rows):
-        y = 118 + i * 24
-        st = appear(0.3 + i * 0.07, 0.01)
+        y = y0 + i * 24
+        st = appear(1.0 + i * 0.05, 0.01)
         b.append(text(ix, y, [(k + ":", "bl b")], cls="a", style=st))
         b.append(text(vx, y, v, cls="a", style=st))
     ansi = ["#2d333b", RED, GRN, YEL, BLU, MAG, CYN, TXT]
     for i, c in enumerate(ansi):
-        b.append(f'<rect class="a" x="{ix + i * 30}" y="{118 + len(rows) * 24 + 2}" width="30" height="16" fill="{c}" style="{appear(1.1, 0.01)}"/>')
+        b.append(f'<rect class="a" x="{ix + i * 30}" y="{y0 + len(rows) * 24 - 6}" width="30" height="16" fill="{c}" style="{appear(1.0 + len(rows) * 0.05, 0.01)}"/>')
     return svg(h, b, "neofetch: " + ". ".join(f"{k} {v}" for k, v in rows) + ".")
 
 
@@ -285,7 +320,7 @@ def stack():
                               ("supabase", "Supabase")])
     # a row is either three small directories side by side, or one wide directory whose items flow across three columns
     layout = [[lang], [web], [android, embedded, mlcv], [security], [os_, ai, tools], [database]]
-    colw, rowh, top = 264, 34, 74
+    colw, rowh, top = 264, 34, TOP + 42
 
     def row_height(row):
         n = max(len(items) for _, items in row) if len(row) == 3 else -(-len(row[0][1]) // 3)
@@ -293,8 +328,7 @@ def stack():
 
     h = top + sum(map(row_height, layout)) - 10
     b = frame(h)
-    b.append(text(24, 38, [("$ ", "bl b"), ("ls", "g"), (" ~/stack", "t")]))
-    b.append(f'<line x1="24" y1="54" x2="{W - 24}" y2="54" stroke="{LINE}"/>')
+    b += kali_prompt(24, TOP, 0.1, [("ls", "g"), (" ~/stack", "t")], 0.3, 0.5, "s")
     y0 = top
     for row in layout:
         for c, (label, items) in enumerate(row):
@@ -326,11 +360,11 @@ def log():
     doing = [
         "building AOSP from source",
     ]
-    h = 74 + len(done) * 26 + 18 + len(doing) * 26 + 10
+    start = TOP + 56
+    h = start - 10 + len(done) * 26 + 18 + len(doing) * 26 + 10
     b = frame(h)
-    b.append(text(24, 38, [("$ ", "bl b"), ("cat", "g"), (" ~/notes/now.log", "t")]))
-    b.append(f'<line x1="24" y1="54" x2="{W - 24}" y2="54" stroke="{LINE}"/>')
-    y, t = 84, 0.3
+    b += kali_prompt(24, TOP, 0.1, [("cat", "g"), (" ~/notes/now.log", "t")], 0.3, 0.7, "l")
+    y, t = start, 1.1
     # metasploit-style markers: [+] success, [*] status
     for s in done:
         b.append(text(24, y, [("[+] ", "g b"), (s, "t")], cls="a", style=appear(t, 0.01)))
@@ -409,14 +443,14 @@ def stats():
     gap = 3
     step = (W - 48 + gap) / len(weeks)  # heatmap spans the full text width
     cell = round(step - gap, 1)
-    top = 84 + len(rows) * 26 + 6
+    start = TOP + 56
+    top = start + len(rows) * 26 + 6
     h = round(top + 7 * step + 42)
     b = frame(h)
-    b.append(text(24, 38, [("$ ", "bl b"), ("gh", "g"), (f" stats {USER}", "t")]))
-    b.append(f'<line x1="24" y1="54" x2="{W - 24}" y2="54" stroke="{LINE}"/>')
+    b += kali_prompt(24, TOP, 0.1, [("gh", "g"), (f" stats {USER}", "t")], 0.3, 0.6, "g")
     vx, nx = 24 + 17 * cw(14), 24 + 30 * cw(14)
     for i, (k, v, note) in enumerate(rows):
-        y, st = 84 + i * 26, appear(0.3 + i * 0.12, 0.01)
+        y, st = start + i * 26, appear(1.0 + i * 0.12, 0.01)
         b.append(text(24, y, [(k, "bl b")], cls="a", style=st))
         b.append(text(vx, y, [(v, "h b")], cls="a", style=st))
         b.append(text(nx, y, [(note, "d")], cls="a", style=st))
@@ -428,7 +462,7 @@ def stats():
         return levels[0] if n == 0 else levels[min(4, 1 + 4 * (n - 1) // peak)]
 
     x0 = 24
-    t0 = 0.3 + len(rows) * 0.12
+    t0 = 1.0 + len(rows) * 0.12
     for wi, w in enumerate(weeks):
         # the first week can start mid-week; place days by weekday
         cells = "".join(f'<rect x="{x0 + wi * step:.1f}" y="{top + ((dt.date.fromisoformat(d["date"]).weekday() + 1) % 7) * step:.1f}" '
