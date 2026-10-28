@@ -290,11 +290,12 @@ YYYYYYKKKKKKKKYYYYYY
 def stack():
     lang = ("lang/", [("python", "Python"), ("java", "Java"), ("kotlin", "Kotlin"), ("dart", "Dart"), ("csharp", "C#"),
                       ("php", "PHP"), ("javascript", "JavaScript"), ("bash", "Bash"), ("powershell", "PowerShell")])
-    web = ("web/", [("html5", "HTML"), ("css3", "CSS"), ("react", "React"), ("tailwindcss", "Tailwind CSS"),
-                    ("laravel", "Laravel"), ("django", "Django"), ("flask", "Flask"), ("vercel", "Vercel")])
+    frontend = ("frontend/", [("html5", "HTML"), ("css3", "CSS"), ("react", "React"), ("tailwindcss", "Tailwind CSS")])
+    backend = ("backend/", [("laravel", "Laravel"), ("django", "Django"), ("flask", "Flask")])
+    cloud = ("cloud/", [("firebase", "Firebase"), ("supabase", "Supabase"), ("vercel", "Vercel")])
     android = ("android/", [("android", "Android apps"), ("android", "AOSP"), ("lineageos", "Custom ROMs"),
                             ("magisk", "Magisk modules"), ("termux", "Termux")])
-    embedded = ("embedded/", [("espressif", "ESP32"), ("espressif", "ESP8266"), ("arduino", "Arduino"),
+    iot = ("iot/", [("espressif", "ESP32"), ("espressif", "ESP8266"), ("arduino", "Arduino"),
                               ("raspberrypi", "Raspberry Pi"), ("mqtt", "MQTT")])
     mlcv = ("ml-cv/", [("opencv", "OpenCV"), ("mediapipe", "MediaPipe"), ("numpy", "NumPy")])
     security = ("security/", [("burpsuite", "Burp Suite"), ("metasploit", "Metasploit"), ("sqlmap", "sqlmap"),
@@ -306,10 +307,9 @@ def stack():
                         ("androidstudio", "Android Studio"), ("platformio", "PlatformIO"), ("figma", "Figma"),
                         ("cisco", "Cisco Packet Tracer")])
     database = ("database/", [("mysql", "MySQL"), ("microsoftsqlserver", "SQL Server"), ("oracle", "Oracle"),
-                              ("sqlite", "SQLite"), ("mongodb", "MongoDB"), ("firebase", "Firebase"),
-                              ("supabase", "Supabase")])
+                              ("sqlite", "SQLite"), ("mongodb", "MongoDB")])
     # a row is either three small directories side by side, or one wide directory whose items flow across three columns
-    layout = [[lang], [web], [android, embedded, mlcv], [security], [os_, ai, tools], [database]]
+    layout = [[lang], [frontend, backend, cloud], [database], [android, iot, mlcv], [security], [os_, ai, tools]]
     colw, rowh, top = 264, 34, TOP + 20
 
     def row_height(row):
