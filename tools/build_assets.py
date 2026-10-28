@@ -253,10 +253,11 @@ YYYYYYKKKKKKKKYYYYYY
     rows = [
         ("Role", "full-stack developer"),
         ("OS", "Kali Linux, Windows"),
-        ("Languages", "Python, Java, Kotlin, PHP, JavaScript"),
-        ("Web", "React, Laravel, Django, Flask"),
+        ("Web", "HTML, CSS, JavaScript, PHP, Python"),
+        ("App", "Java, Kotlin, Dart, C#"),
+        ("Frameworks", "React, Tailwind CSS, Laravel, Django, Flask"),
         ("Android", "Android apps, AOSP, Magisk"),
-        ("Embedded", "ESP32, Arduino, Raspberry Pi"),
+        ("IoT", "ESP32, Arduino, Raspberry Pi"),
         ("Security", "Burp Suite, Metasploit, Nmap"),
         ("Certs", "Cisco Ethical Hacker, Endpoint Security"),
         ("Level", "always learning"),
@@ -271,7 +272,7 @@ YYYYYYKKKKKKKKYYYYYY
     cells = "".join(f'<rect x="{tx + c * px}" y="{ty + r * px:.1f}" width="{px}" height="{px}" fill="{tux_colors[ch]}"/>'
                     for r, row in enumerate(tux) for c, ch in enumerate(row) if ch in tux_colors)
     b.append(f'<g class="a" shape-rendering="crispEdges" style="{appear(0.95, 0.05)}">{cells}</g>')
-    ix, vx = 270, 270 + 11 * cw(14)
+    ix, vx = 270, 270 + 12 * cw(14)
     st = appear(0.95, 0.01)
     b.append(text(ix, y0 - 44, [("levi", "bl b"), ("@", "t"), ("kali", "bl b")], cls="a", style=st))
     b.append(text(ix, y0 - 24, [("-" * 9, "d")], cls="a", style=st))
@@ -288,11 +289,15 @@ YYYYYYKKKKKKKKYYYYYY
 
 # ---------------------------------------------------------------- stack
 def stack():
-    lang = ("lang/", [("python", "Python"), ("java", "Java"), ("kotlin", "Kotlin"), ("dart", "Dart"), ("csharp", "C#"),
-                      ("php", "PHP"), ("javascript", "JavaScript"), ("bash", "Bash"), ("powershell", "PowerShell")])
-    frontend = ("frontend/", [("html5", "HTML"), ("css3", "CSS"), ("react", "React"), ("tailwindcss", "Tailwind CSS")])
-    backend = ("backend/", [("laravel", "Laravel"), ("django", "Django"), ("flask", "Flask")])
-    cloud = ("cloud/", [("firebase", "Firebase"), ("supabase", "Supabase"), ("vercel", "Vercel")])
+    web_lang = ("web-lang/", [("html5", "HTML"), ("css3", "CSS"), ("javascript", "JavaScript"), ("php", "PHP"),
+                              ("python", "Python")])
+    app_lang = ("app-lang/", [("java", "Java"), ("kotlin", "Kotlin"), ("dart", "Dart"), ("csharp", "C#")])
+    scripting = ("scripting/", [("bash", "Bash"), ("powershell", "PowerShell")])
+    frameworks = ("frameworks/", [("react", "React"), ("tailwindcss", "Tailwind CSS"), ("laravel", "Laravel"),
+                                  ("django", "Django"), ("flask", "Flask")])
+    # Backend-as-a-Service and hosting, named for what they are
+    baas = ("baas/", [("firebase", "Firebase"), ("supabase", "Supabase")])
+    hosting = ("hosting/", [("vercel", "Vercel")])
     android = ("android/", [("android", "Android apps"), ("android", "AOSP"), ("lineageos", "Custom ROMs"),
                             ("magisk", "Magisk modules"), ("termux", "Termux")])
     iot = ("iot/", [("espressif", "ESP32"), ("espressif", "ESP8266"), ("arduino", "Arduino"),
@@ -309,7 +314,8 @@ def stack():
     database = ("database/", [("mysql", "MySQL"), ("microsoftsqlserver", "SQL Server"), ("oracle", "Oracle"),
                               ("sqlite", "SQLite"), ("mongodb", "MongoDB")])
     # a row is either three small directories side by side, or one wide directory whose items flow across three columns
-    layout = [[lang], [frontend, backend, cloud], [database], [android, iot, mlcv], [security], [os_, ai, tools]]
+    layout = [[web_lang, app_lang, scripting], [frameworks], [database, baas, hosting], [android, iot, mlcv], [security],
+              [os_, ai, tools]]
     colw, rowh, top = 264, 34, TOP + 20
 
     def row_height(row):
