@@ -6,4 +6,4 @@
 
 <img src="./assets/log-29fb51ac.svg" width="100%" alt="now.log. Done: Magisk modules, MediaPipe and OpenCV tracking, ESP32-CAM streaming into a machine learning model, full stack web apps, ESP32, Arduino and Raspberry Pi builds, rooting and custom ROMs, security labs, hardware repair. In progress: machine learning, building AOSP from source." />
 
-<img src="./assets/stats-5e816e02.svg" width="100%" alt="GitHub stats: contributions, streaks, public repos and stars, with a contribution heatmap for the last year." />
+<img src="./assets/stats-1f22673c.svg" width="100%" alt="GitHub stats: contributions, streaks, public repos and stars, with a contribution heatmap for the last year." />
