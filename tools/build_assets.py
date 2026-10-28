@@ -4,9 +4,14 @@ usage: python tools/build_assets.py assets   (also updates image links in README
 """
 import base64
 import colorsys
+import datetime as dt
 import hashlib
+import json
+import os
 import re
+import subprocess
 import sys
+import urllib.request
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -85,13 +90,17 @@ def svg(h, body, label):
 
 
 # Kali's default zsh prompt colors for a normal user
-KALI_TOP = [("┌──(", "g"), ("levi㉿kali", "bl b"), (")-[", "g"), ("~", "h b"), ("]", "g")]
+KALI_TOP = [("(", "g"), ("levi㉿kali", "bl b"), (")-[", "g"), ("~", "h b"), ("]", "g")]
 
 
 def kali_prompt(x, y, t, cmd=None, type_start=None, type_dur=None, kid=""):
     """Two-line Kali zsh prompt. Optionally types `cmd` (list of parts) with a stepping cover + cursor."""
-    out = [text(x, y, KALI_TOP, cls="a", style=appear(t, 0.01)),
-           text(x, y + 22, [("└─", "g"), ("$ ", "bl b")], cls="a", style=appear(t, 0.01))]
+    # the ┌── └─ corner is drawn as a path: box-drawing glyphs come out squashed under textLength
+    c = cw(14)
+    corner = (f'<path class="a" d="M{x + 3 * c - 1:.1f} {y - 5}H{x + c / 2:.1f}V{y + 17}H{x + 2 * c - 1:.1f}" '
+              f'fill="none" stroke="{GRN}" stroke-width="1.4" style="{appear(t, 0.01)}"/>')
+    out = [corner, text(x + 3 * c, y, KALI_TOP, cls="a", style=appear(t, 0.01)),
+           text(x + 2 * c, y + 22, [("$ ", "bl b")], cls="a", style=appear(t, 0.01))]
     if cmd:
         cx = x + 4 * cw(14)
         n = len("".join(p for p, _ in cmd))
@@ -189,14 +198,14 @@ def hero():
         b.append(f'<g class="a" shape-rendering="crispEdges" style="{appear(1.95 + i * 0.06, 0.05)}">'
                  + "".join(shadow) + "".join(solid) + "</g>")
     b += kali_prompt(x, 240, 2.5, [("whoami", "g")], 2.8, 0.5, "b")
-    b.append(text(x, 288, [("Levi", "h b"), (". Python dev who lives in the terminal and takes things apart to see how they work.", "t")],
+    b.append(text(x, 288, [("Levi", "h b"), (". Full stack dev who lives in the terminal and likes to see how things work.", "t")],
                   cls="a", style=appear(3.45, 0.01)))
-    b.append(text(x, 310, [("Not an expert at any of it. I just keep going until it works.", "d")],
+    b.append(text(x, 310, [("Still learning, one project at a time.", "d")],
                   cls="a", style=appear(3.55, 0.01)))
     b += kali_prompt(x, 336, 3.8)
     b.append(f'<rect x="{x + 4 * cw(14):.1f}" y="{336 + 22 - 12}" width="{cw(14):.1f}" height="16" fill="{TXT}" '
              f'opacity="0" style="animation:blink 1.1s steps(1) 3.9s infinite"/>')
-    return svg(h, b, "Terminal: figlet levi piped to lolcat, whoami. Levi, Python dev who lives in the terminal. Not an expert, keeps going until it works.")
+    return svg(h, b, "Terminal: figlet levi piped to lolcat, whoami. Levi, full stack dev who lives in the terminal. Still learning, one project at a time.")
 
 
 # ---------------------------------------------------------------- neofetch
@@ -212,15 +221,17 @@ def neofetch():
         [("    ", "t"), ("\\___)", "y"), ("=", "t"), ("(___/", "y")],
     ]
     rows = [
+        ("Role", "full stack developer"),
         ("OS", "Kali, BlackArch, Parrot OS, Windows, Windows Server"),
         ("Shell", "bash, PowerShell"),
         ("Editor", "Visual Studio Code"),
         ("IDE", "Visual Studio, Android Studio, PlatformIO"),
-        ("Language", "Python (main), Java, C#"),
+        ("Language", "Python, JavaScript, TypeScript, Java, C#, PHP"),
+        ("Frontend", "React, Vite, Tailwind CSS, HTML, CSS"),
+        ("Backend", "Firebase, Supabase, PHP, Docker"),
         ("Database", "MySQL, SQL Server, Oracle, SQLite, MongoDB"),
-        ("Backend", "Firebase, Supabase"),
         ("AI", "Claude, Codex, Hermes, Kimi"),
-        ("ML / CV", "OpenCV, MediaPipe, ML fundamentals"),
+        ("ML / CV", "OpenCV, MediaPipe, machine learning"),
         ("Android", "AOSP, rooting, custom ROMs, Magisk modules"),
         ("Embedded", "ESP32, Arduino, Raspberry Pi"),
         ("Network", "Cisco Packet Tracer, Nmap, Wireshark"),
@@ -228,7 +239,7 @@ def neofetch():
         ("Security", "ethical hacking (own gear or with permission)"),
         ("Level", "not an expert, still learning"),
     ]
-    h = 524
+    h = 118 + len(rows) * 24 + 46
     b = frame(h, "neofetch")
     for i, ln in enumerate(tux):
         b.append(text(44, 118 + (len(rows) - 1) * 12 - 63 + i * 21, ln, fs=16))
@@ -243,7 +254,7 @@ def neofetch():
     ansi = ["#2d333b", RED, GRN, YEL, BLU, MAG, CYN, TXT]
     for i, c in enumerate(ansi):
         b.append(f'<rect class="a" x="{ix + i * 30}" y="{118 + len(rows) * 24 + 2}" width="30" height="16" fill="{c}" style="{appear(1.1, 0.01)}"/>')
-    return svg(h, b, "neofetch: OS Kali Linux, BlackArch, Parrot OS, Windows, Windows Server. Network Cisco Packet Tracer, Nmap, Wireshark. Shell bash, PowerShell. Language Python, Java, C#. Database MySQL, SQL Server, Oracle, SQLite, MongoDB. Backend Firebase, Supabase. Editor Visual Studio Code. IDE Visual Studio, Android Studio, PlatformIO. AI Claude, Codex, Hermes, Kimi. "
+    return svg(h, b, "neofetch: Role full stack developer. OS Kali Linux, BlackArch, Parrot OS, Windows, Windows Server. Network Cisco Packet Tracer, Nmap, Wireshark. Shell bash, PowerShell. Language Python, JavaScript, TypeScript, Java, C#, PHP. Frontend React, Vite, Tailwind CSS, HTML, CSS. Backend Firebase, Supabase, PHP, Docker. Database MySQL, SQL Server, Oracle, SQLite, MongoDB. Editor Visual Studio Code. IDE Visual Studio, Android Studio, PlatformIO. AI Claude, Codex, Hermes, Kimi. "
                      "ML/CV OpenCV, MediaPipe. Android AOSP, rooting, custom ROMs, Magisk modules. Embedded ESP32, Arduino, "
                      "Raspberry Pi. Hardware PC and phone repair. Security ethical hacking. Level: not an expert, still learning.")
 
@@ -262,6 +273,8 @@ def stack():
     ]
     # full-width sections below the grid, laid out on the same three columns
     wide = [
+        ("web/", [("html5", "HTML"), ("css3", "CSS"), ("javascript", "JavaScript"), ("typescript", "TypeScript"),
+                  ("react", "React"), ("vitejs", "Vite"), ("tailwindcss", "Tailwind CSS"), ("php", "PHP"), ("docker", "Docker")]),
         ("network/", [("cisco", "Cisco Packet Tracer"), ("nmap", "Nmap"), ("wireshark", "Wireshark")]),
         ("database/", [("mysql", "MySQL"), ("microsoftsqlserver", "Microsoft SQL Server"), ("oracle", "Oracle"),
                        ("sqlite", "SQLite"), ("mongodb", "MongoDB"), ("firebase", "Firebase"), ("supabase", "Supabase")]),
@@ -294,7 +307,8 @@ def stack():
             b.append(text(x + 30, iy + 14, name))
         y0 += wh
     return svg(h, b, "Stack. lang: Python, Java, C#, Bash, PowerShell. ai: Claude, Codex, Hermes, Kimi. ml-cv: OpenCV, MediaPipe, NumPy. "
-                     "embedded: ESP32, Arduino, Raspberry Pi. os: Kali Linux, BlackArch, Parrot OS, Windows, Windows Server. network: Cisco Packet Tracer, Nmap, Wireshark. "
+                     "embedded: ESP32, Arduino, Raspberry Pi. os: Kali Linux, BlackArch, Parrot OS, Windows, Windows Server. "
+                     "web: HTML, CSS, JavaScript, TypeScript, React, Vite, Tailwind CSS, PHP, Docker. network: Cisco Packet Tracer, Nmap, Wireshark. "
                      "android: AOSP, custom ROMs, Magisk modules. "
                      "database: MySQL, Microsoft SQL Server, Oracle, SQLite, MongoDB, Firebase, Supabase. tools: Visual Studio Code, Visual Studio, Android Studio, PlatformIO IDE.")
 
@@ -304,7 +318,9 @@ def log():
     done = [
         "wrote my own Magisk modules",
         "hand and face tracking with MediaPipe + OpenCV",
-        "ESP32 / Arduino / Raspberry Pi builds: sensors, wiring, lots of trial and error",
+        "ESP32-CAM streaming live video into a machine learning model",
+        "full stack web apps with React, Firebase and Supabase",
+        "ESP32 / Arduino / Raspberry Pi builds: sensors, wiring and small gadgets",
         "rooted phones, flashed custom ROMs, dug through AOSP",
         "security labs on Kali, BlackArch and Parrot (own gear only)",
         "PC and phone hardware troubleshooting and repair",
@@ -312,7 +328,6 @@ def log():
     doing = [
         "going deeper into machine learning",
         "building AOSP from source",
-        "getting an ESP32 camera to feed a Python CV script",
     ]
     h = 74 + len(done) * 26 + 18 + len(doing) * 26 + 10
     b = frame(h)
@@ -329,15 +344,121 @@ def log():
         b.append(text(24, y, [("[*] ", "bl b"), (s, "t"), ("  in progress", "y")], cls="a", style=appear(t, 0.01)))
         y += 26
         t += 0.12
-    return svg(h, b, "Log. Done: Magisk modules, MediaPipe + OpenCV tracking, ESP32/Arduino/Raspberry Pi builds, "
-                     "rooting and custom ROMs, security labs, hardware repair. In progress: machine learning, "
-                     "building AOSP from source, ESP32 camera to Python CV.")
+    return svg(h, b, "Log. Done: Magisk modules, MediaPipe + OpenCV tracking, ESP32-CAM with machine learning, "
+                     "full stack web apps, ESP32/Arduino/Raspberry Pi builds, rooting and custom ROMs, security labs, "
+                     "hardware repair. In progress: machine learning, building AOSP from source.")
+
+
+# ---------------------------------------------------------------- stats
+USER = "Levi-crown"
+CAL = "contributionCalendar{totalContributions weeks{contributionDays{date contributionCount}}}"
+
+
+def graphql(query):
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        try:
+            token = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True).stdout.strip()
+        except OSError:
+            pass
+    if not token:
+        return None
+    req = urllib.request.Request("https://api.github.com/graphql", json.dumps({"query": query}).encode(),
+                                 {"Authorization": f"bearer {token}", "User-Agent": USER})
+    return json.load(urllib.request.urlopen(req))["data"]["user"]
+
+
+def stats():
+    """Contribution stats drawn in-house; the third-party stats cards kept going down."""
+    user = graphql(f'{{user(login:"{USER}"){{createdAt}}}}')
+    if user is None:
+        return None
+    first = int(user["createdAt"][:4])
+    now = dt.datetime.now(dt.timezone.utc)
+    # contributionsCollection spans at most one year, so ask for each calendar year
+    years = " ".join(f'y{y}:contributionsCollection(from:"{y}-01-01T00:00:00Z",to:"{min(now.year, y)}-12-31T23:59:59Z"){{{CAL}}}'
+                     for y in range(first, now.year + 1))
+    user = graphql(f'{{user(login:"{USER}"){{createdAt {years} last:contributionsCollection{{{CAL}}} '
+                   f'repositories(ownerAffiliations:OWNER,privacy:PUBLIC,first:100){{totalCount nodes{{stargazerCount}}}}}}}}')
+    days = sorted({d["date"]: d["contributionCount"]
+                   for y in range(first, now.year + 1)
+                   for w in user[f"y{y}"]["contributionCalendar"]["weeks"] for d in w["contributionDays"]}.items())
+    days = [(dt.date.fromisoformat(d), n) for d, n in days if d <= now.date().isoformat()]
+    total = sum(n for _, n in days)
+    best, run = (0, None, None), 0
+    for i, (d, n) in enumerate(days):
+        run = run + 1 if n else 0
+        if run > best[0]:
+            best = (run, days[i - run + 1][0], d)
+    # today doesn't break the streak until it's over
+    cur, i = 0, len(days) - 1 - (days and days[-1][1] == 0)
+    while i >= 0 and days[i][1]:
+        cur, i = cur + 1, i - 1
+    repos = user["repositories"]
+    stars = sum(r["stargazerCount"] for r in repos["nodes"])
+    since = dt.date.fromisoformat(user["createdAt"][:10])
+
+    def day(d):
+        return f"{d:%b} {d.day}"
+
+    def plural(n, word):
+        return f"{n:,} {word}{'' if n == 1 else 's'}"
+
+    rows = [
+        ("contributions", f"{total:,}", f"since {since:%b} {since.year}"),
+        ("current streak", plural(cur, "day"), ""),
+        ("longest streak", plural(best[0], "day"), f"{day(best[1])} - {day(best[2])}" if best[0] else ""),
+        ("public repos", f"{repos['totalCount']}", plural(stars, "star")),
+    ]
+    weeks = user["last"]["contributionCalendar"]["weeks"]
+    gap = 3
+    step = (W - 48 + gap) / len(weeks)  # heatmap spans the full text width
+    cell = round(step - gap, 1)
+    top = 84 + len(rows) * 26 + 6
+    h = round(top + 7 * step + 42)
+    b = frame(h)
+    b.append(text(24, 38, [("$ ", "bl b"), ("gh", "g"), (f" stats {USER}", "t")]))
+    b.append(f'<line x1="24" y1="54" x2="{W - 24}" y2="54" stroke="{LINE}"/>')
+    vx, nx = 24 + 17 * cw(14), 24 + 30 * cw(14)
+    for i, (k, v, note) in enumerate(rows):
+        y, st = 84 + i * 26, appear(0.3 + i * 0.12, 0.01)
+        b.append(text(24, y, [(k, "bl b")], cls="a", style=st))
+        b.append(text(vx, y, [(v, "h b")], cls="a", style=st))
+        b.append(text(nx, y, [(note, "d")], cls="a", style=st))
+    # GitHub's dark-mode contribution greens
+    levels = ["#2d333b", "#0e4429", "#006d32", "#26a641", "#39d353"]
+    peak = max((d["contributionCount"] for w in weeks for d in w["contributionDays"]), default=0) or 1
+
+    def shade(n):
+        return levels[0] if n == 0 else levels[min(4, 1 + 4 * (n - 1) // peak)]
+
+    x0 = 24
+    t0 = 0.3 + len(rows) * 0.12
+    for wi, w in enumerate(weeks):
+        # the first week can start mid-week; place days by weekday
+        cells = "".join(f'<rect x="{x0 + wi * step:.1f}" y="{top + ((dt.date.fromisoformat(d["date"]).weekday() + 1) % 7) * step:.1f}" '
+                        f'width="{cell}" height="{cell}" rx="2" fill="{shade(d["contributionCount"])}"/>'
+                        for d in w["contributionDays"])
+        b.append(f'<g class="a" style="{appear(t0 + wi * 0.012, 0.05)}">{cells}</g>')
+    ly = round(top + 7 * step + 16)
+    cell, gap = 11, 3  # legend swatches stay small
+    lx = W - 24 - len(levels) * (cell + gap) - 4 - 4 * cw(12)
+    b.append(text(lx - 5 * cw(12), ly + 9, [("less", "d")], fs=12))
+    for i, c in enumerate(levels):
+        b.append(f'<rect x="{lx + i * (cell + gap)}" y="{ly}" width="{cell}" height="{cell}" rx="2" fill="{c}"/>')
+    b.append(text(lx + len(levels) * (cell + gap) + 4, ly + 9, [("more", "d")], fs=12))
+    b.append(text(24, ly + 9, [(f"{user['last']['contributionCalendar']['totalContributions']:,} contributions in the last year", "d")], fs=12))
+    return svg(h, b, f"GitHub stats. {total:,} contributions since {since:%B %Y}. Current streak {plural(cur, 'day')}, "
+                     f"longest streak {plural(best[0], 'day')}. {repos['totalCount']} public repos, {plural(stars, 'star')}.")
 
 
 README = Path(__file__).parent.parent / "README.md"
 readme = README.read_text(encoding="utf-8")
-for name, fn in [("hero", hero), ("neofetch", neofetch), ("stack", stack), ("log", log)]:
+for name, fn in [("hero", hero), ("neofetch", neofetch), ("stack", stack), ("log", log), ("stats", stats)]:
     content = fn()
+    if content is None:
+        print("skipped", name, "(no GitHub token)")
+        continue
     # GitHub's /raw/ redirect drops query strings and raw files are cached for 5 min,
     # so the content hash goes in the filename to give every version a fresh URL
     ver = hashlib.sha1(content.encode()).hexdigest()[:8]
