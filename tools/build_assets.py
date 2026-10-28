@@ -102,27 +102,23 @@ def svg(h, body, label):
             f'<style>{BASE_CSS}</style>' + "".join(body) + "</svg>")
 
 
-# Kali's default zsh prompt colors for a normal user
-KALI_TOP = [("(", "g"), ("levi㉿kali", "bl b"), (")-[", "g"), ("~", "h b"), ("]", "g")]
+# the classic bash prompt: bold green user@host, bold blue path
+PROMPT = [("levi@kali", "g b"), (":", "t"), ("~", "bl b"), ("$", "t")]
+PROMPT_LEN = len("".join(p for p, _ in PROMPT)) + 1  # the space before the command
 
 
-def kali_prompt(x, y, t, cmd=None, type_start=None, type_dur=None, kid=""):
-    """Two-line Kali zsh prompt. Optionally types `cmd` (list of parts) with a stepping cover + cursor."""
-    # the ┌── └─ corner is drawn as a path: box-drawing glyphs come out squashed under textLength
-    c = cw(14)
-    corner = (f'<path class="a" d="M{x + 3 * c - 1:.1f} {y - 5}H{x + c / 2:.1f}V{y + 17}H{x + 2 * c - 1:.1f}" '
-              f'fill="none" stroke="{GRN}" stroke-width="1.4" style="{appear(t, 0.01)}"/>')
-    out = [corner, text(x + 3 * c, y, KALI_TOP, cls="a", style=appear(t, 0.01)),
-           text(x + 2 * c, y + 22, [("$ ", "bl b")], cls="a", style=appear(t, 0.01))]
+def prompt(x, y, t, cmd=None, type_start=None, type_dur=None, kid=""):
+    """One prompt line. Optionally types `cmd` (list of parts) with a stepping cover + cursor."""
+    out = [text(x, y, PROMPT, cls="a", style=appear(t, 0.01))]
     if cmd:
-        cx = x + 4 * cw(14)
+        cx = x + PROMPT_LEN * cw(14)
         n = len("".join(p for p, _ in cmd))
         dist = n * cw(14)
-        out.append(text(cx, y + 22, cmd))
+        out.append(text(cx, y, cmd))
         out.append(f"<style>@keyframes ty{kid}{{to{{transform:translateX({dist:.1f}px)}}}}</style>")
         mv = f"animation:ty{kid} {type_dur}s steps({n}) {type_start}s forwards"
-        out.append(f'<rect class="cv" x="{cx - 1}" y="{y + 7}" width="{dist + 4:.1f}" height="20" fill="{BG}" style="{mv}"/>')
-        out.append(f'<g style="{mv}"><rect class="cur" x="{cx}" y="{y + 10}" width="{cw(14):.1f}" height="16" '
+        out.append(f'<rect class="cv" x="{cx - 1}" y="{y - 15}" width="{dist + 4:.1f}" height="20" fill="{BG}" style="{mv}"/>')
+        out.append(f'<g style="{mv}"><rect class="cur" x="{cx}" y="{y - 12}" width="{cw(14):.1f}" height="16" '
                    f'fill="{TXT}" opacity="0" style="animation:vis {type_dur + 0.2}s linear {type_start}s"/></g>')
     return out
 
@@ -198,11 +194,11 @@ def hero():
         "███████╗███████╗ ╚████╔╝ ██║",
     ]
     x = 24
-    h = 382
+    h = TOP + 260
     b = frame(h)
-    b += kali_prompt(x, TOP, 0.2, [("figlet", "g"), (" levi ", "t"), ("|", "t"), (" lolcat", "g")], 0.6, 1.2, "a")
+    b += prompt(x, TOP, 0.2, [("figlet", "g"), (" levi ", "t"), ("|", "t"), (" lolcat", "g")], 0.6, 1.2, "a")
     # lolcat: hue drifts along a diagonal; blocks drawn as rects since box glyphs render unevenly
-    cx, cy, top = 12, 17, TOP + 50
+    cx, cy, top = 12, 17, TOP + 24
     for i, ln in enumerate(banner):
         shadow, solid = [], []
         for c, ch in enumerate(ln):
@@ -214,15 +210,15 @@ def hero():
             solid.append(f'<rect x="{px}" y="{py}" width="{cx + 0.6}" height="{cy + 1}" fill="{hsl(hue, 0.62, 0.64)}"/>')
         b.append(f'<g class="a" shape-rendering="crispEdges" style="{appear(1.95 + i * 0.06, 0.05)}">'
                  + "".join(shadow) + "".join(solid) + "</g>")
-    b += kali_prompt(x, TOP + 178, 2.5, [("whoami", "g")], 2.8, 0.5, "b")
-    b.append(text(x, TOP + 226, [("Levi", "h b"), (". Full stack dev who lives in the terminal and likes to see how things work.", "t")],
+    b += prompt(x, TOP + 150, 2.5, [("whoami", "g")], 2.8, 0.5, "b")
+    b.append(text(x, TOP + 180, [("Levi", "h b"), (". Full stack developer who learns from every mistake.", "t")],
                   cls="a", style=appear(3.45, 0.01)))
-    b.append(text(x, TOP + 248, [("Still learning, one project at a time.", "d")],
+    b.append(text(x, TOP + 202, [("Most of what I know came from breaking things and fixing them.", "d")],
                   cls="a", style=appear(3.55, 0.01)))
-    b += kali_prompt(x, TOP + 274, 3.8)
-    b.append(f'<rect x="{x + 4 * cw(14):.1f}" y="{TOP + 274 + 22 - 12}" width="{cw(14):.1f}" height="16" fill="{TXT}" '
+    b += prompt(x, TOP + 234, 3.8)
+    b.append(f'<rect x="{x + PROMPT_LEN * cw(14):.1f}" y="{TOP + 234 - 12}" width="{cw(14):.1f}" height="16" fill="{TXT}" '
              f'opacity="0" style="animation:blink 1.1s steps(1) 3.9s infinite"/>')
-    return svg(h, b, "Terminal: figlet levi piped to lolcat, whoami. Levi, full stack dev who lives in the terminal. Still learning, one project at a time.")
+    return svg(h, b, "Terminal: figlet levi piped to lolcat, whoami. Levi, full stack developer who learns from every mistake. Most of what I know came from breaking things and fixing them.")
 
 
 # ---------------------------------------------------------------- neofetch
@@ -265,10 +261,10 @@ YYYYYYKKKKKKKKYYYYYY
         ("Certs", "Cisco Ethical Hacker, Endpoint Security"),
         ("Level", "always learning"),
     ]
-    y0 = TOP + 56 + 44  # output starts under the prompt; header and rule take two lines
+    y0 = TOP + 34 + 44  # output starts under the prompt; header and rule take two lines
     h = y0 + len(rows) * 24 + 40
     b = frame(h)
-    b += kali_prompt(24, TOP, 0.1, [("neofetch", "g")], 0.3, 0.5, "n")
+    b += prompt(24, TOP, 0.1, [("neofetch", "g")], 0.3, 0.5, "n")
     px = 9
     # centered on the output block, from the user@host line down to the color bar
     tx, ty = 46, y0 + (len(rows) * 24 - 48) / 2 - len(tux) * px / 2
@@ -314,7 +310,7 @@ def stack():
                               ("supabase", "Supabase")])
     # a row is either three small directories side by side, or one wide directory whose items flow across three columns
     layout = [[lang], [web], [android, embedded, mlcv], [security], [os_, ai, tools], [database]]
-    colw, rowh, top = 264, 34, TOP + 42
+    colw, rowh, top = 264, 34, TOP + 20
 
     def row_height(row):
         n = max(len(items) for _, items in row) if len(row) == 3 else -(-len(row[0][1]) // 3)
@@ -322,7 +318,7 @@ def stack():
 
     h = top + sum(map(row_height, layout)) - 10
     b = frame(h)
-    b += kali_prompt(24, TOP, 0.1, [("ls", "g"), (" ~/stack", "t")], 0.3, 0.5, "s")
+    b += prompt(24, TOP, 0.1, [("ls", "g"), (" ~/stack", "t")], 0.3, 0.5, "s")
     y0 = top
     for row in layout:
         for c, (label, items) in enumerate(row):
@@ -354,10 +350,10 @@ def log():
     doing = [
         "building AOSP from source",
     ]
-    start = TOP + 56
+    start = TOP + 34
     h = start - 10 + len(done) * 26 + 18 + len(doing) * 26 + 10
     b = frame(h)
-    b += kali_prompt(24, TOP, 0.1, [("cat", "g"), (" ~/notes/now.log", "t")], 0.3, 0.7, "l")
+    b += prompt(24, TOP, 0.1, [("cat", "g"), (" ~/notes/now.log", "t")], 0.3, 0.7, "l")
     y, t = start, 1.1
     # metasploit-style markers: [+] success, [*] status
     for s in done:
@@ -437,11 +433,11 @@ def stats():
     gap = 3
     step = (W - 48 + gap) / len(weeks)  # heatmap spans the full text width
     cell = round(step - gap, 1)
-    start = TOP + 56
+    start = TOP + 34
     top = start + len(rows) * 26 + 6
     h = round(top + 7 * step + 42)
     b = frame(h)
-    b += kali_prompt(24, TOP, 0.1, [("gh", "g"), (f" stats {USER}", "t")], 0.3, 0.6, "g")
+    b += prompt(24, TOP, 0.1, [("gh", "g"), (f" stats {USER}", "t")], 0.3, 0.6, "g")
     vx, nx = 24 + 17 * cw(14), 24 + 30 * cw(14)
     for i, (k, v, note) in enumerate(rows):
         y, st = start + i * 26, appear(1.0 + i * 0.12, 0.01)
