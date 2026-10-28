@@ -211,14 +211,14 @@ def hero():
         b.append(f'<g class="a" shape-rendering="crispEdges" style="{appear(1.95 + i * 0.06, 0.05)}">'
                  + "".join(shadow) + "".join(solid) + "</g>")
     b += prompt(x, TOP + 150, 2.5, [("whoami", "g")], 2.8, 0.5, "b")
-    b.append(text(x, TOP + 180, [("Levi", "h b"), (". Full stack developer who learns from every mistake.", "t")],
+    b.append(text(x, TOP + 180, [("Levi", "h b"), (". Full-stack developer with a curious mind. I build, break, debug, and learn.", "t")],
                   cls="a", style=appear(3.45, 0.01)))
-    b.append(text(x, TOP + 202, [("Most of what I know came from breaking things and fixing them.", "d")],
+    b.append(text(x, TOP + 202, [("Every mistake teaches me something, and every project gives me a reason to keep exploring.", "d")],
                   cls="a", style=appear(3.55, 0.01)))
     b += prompt(x, TOP + 234, 3.8)
     b.append(f'<rect x="{x + PROMPT_LEN * cw(14):.1f}" y="{TOP + 234 - 12}" width="{cw(14):.1f}" height="16" fill="{TXT}" '
              f'opacity="0" style="animation:blink 1.1s steps(1) 3.9s infinite"/>')
-    return svg(h, b, "Terminal: figlet levi piped to lolcat, whoami. Levi, full stack developer who learns from every mistake. Most of what I know came from breaking things and fixing them.")
+    return svg(h, b, "Terminal: figlet levi piped to lolcat, whoami. Levi. Full-stack developer with a curious mind. I build, break, debug, and learn. Every mistake teaches me something, and every project gives me a reason to keep exploring.")
 
 
 # ---------------------------------------------------------------- neofetch
@@ -251,7 +251,7 @@ YYYYYYKKKKKKKKYYYYYY
     tux_colors = {"K": "#3d444d", "E": HI, "P": BG, "W": HI, "Y": YEL}
     # only the headline items; the full list lives in the stack panel
     rows = [
-        ("Role", "full stack developer"),
+        ("Role", "full-stack developer"),
         ("OS", "Kali Linux, Windows"),
         ("Languages", "Python, Java, Kotlin, PHP, JavaScript"),
         ("Web", "React, Laravel, Django, Flask"),
