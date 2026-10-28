@@ -253,22 +253,16 @@ YYYYYYKKKKKKKKYYYYYY
 .YYYYY........YYYYY.
 """.split()
     tux_colors = {"K": "#3d444d", "E": HI, "P": BG, "W": HI, "Y": YEL}
+    # only the headline items; the full list lives in the stack panel
     rows = [
         ("Role", "full stack developer"),
-        ("OS", "Kali, BlackArch, Parrot OS, Windows"),
-        ("Shell", "Bash, PowerShell"),
-        ("Language", "Python, Java, Kotlin, Dart, C#, PHP, JavaScript"),
-        ("Web", "React, Tailwind CSS, Laravel, Django, Flask"),
-        ("Database", "MySQL, SQL Server, Oracle, SQLite, MongoDB"),
-        ("Cloud", "Firebase, Supabase, Vercel"),
-        ("Android", "Android apps, AOSP, custom ROMs, Magisk, Termux"),
-        ("Embedded", "ESP32-CAM, ESP8266, Arduino, Raspberry Pi, MQTT"),
-        ("ML / CV", "OpenCV, MediaPipe, NumPy, machine learning"),
-        ("Security", "Burp Suite, Metasploit, sqlmap, Nmap, Wireshark"),
-        ("Network", "Cisco Packet Tracer, Windows Server"),
-        ("Tools", "VS Code, Visual Studio, Android Studio, Figma"),
-        ("AI", "Claude, Codex, Hermes, Kimi"),
-        ("Certs", "Cisco Ethical Hacker, Cisco Endpoint Security"),
+        ("OS", "Kali Linux, Windows"),
+        ("Languages", "Python, Java, Kotlin, PHP, JavaScript"),
+        ("Web", "React, Laravel, Django, Flask"),
+        ("Android", "Android apps, AOSP, Magisk"),
+        ("Embedded", "ESP32, Arduino, Raspberry Pi"),
+        ("Security", "Burp Suite, Metasploit, Nmap"),
+        ("Certs", "Cisco Ethical Hacker, Endpoint Security"),
         ("Level", "always learning"),
     ]
     y0 = TOP + 56 + 44  # output starts under the prompt; header and rule take two lines
@@ -308,13 +302,13 @@ def stack():
                               ("raspberrypi", "Raspberry Pi"), ("mqtt", "MQTT")])
     mlcv = ("ml-cv/", [("opencv", "OpenCV"), ("mediapipe", "MediaPipe"), ("numpy", "NumPy")])
     security = ("security/", [("burpsuite", "Burp Suite"), ("metasploit", "Metasploit"), ("sqlmap", "sqlmap"),
-                              ("nmap", "Nmap"), ("wireshark", "Wireshark"), ("cisco", "Cisco Packet Tracer"),
-                              ("windows11", "Windows Server")])
+                              ("nmap", "Nmap"), ("wireshark", "Wireshark")])
     os_ = ("os/", [("kalilinux", "Kali Linux"), ("archlinux", "BlackArch"), ("parrotsecurity", "Parrot OS"),
-                   ("windows11", "Windows")])
+                   ("windows11", "Windows"), ("windows11", "Windows Server")])
     ai = ("ai/", [("claude", "Claude"), ("openai", "Codex"), ("nousresearch", "Hermes"), ("kimi", "Kimi")])
     tools = ("tools/", [("vscode", "Visual Studio Code"), ("visualstudio", "Visual Studio"),
-                        ("androidstudio", "Android Studio"), ("platformio", "PlatformIO"), ("figma", "Figma")])
+                        ("androidstudio", "Android Studio"), ("platformio", "PlatformIO"), ("figma", "Figma"),
+                        ("cisco", "Cisco Packet Tracer")])
     database = ("database/", [("mysql", "MySQL"), ("microsoftsqlserver", "SQL Server"), ("oracle", "Oracle"),
                               ("sqlite", "SQLite"), ("mongodb", "MongoDB"), ("firebase", "Firebase"),
                               ("supabase", "Supabase")])
