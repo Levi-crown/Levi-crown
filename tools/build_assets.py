@@ -33,6 +33,7 @@ BRAND = {
     "numpy": "#4DABCF", "espressif": "#E7352C", "arduino": "#00979D", "raspberrypi": "#C51A4A",
     "kalilinux": "#4C8DF6", "archlinux": "#D64545", "parrotsecurity": "#15E0ED",
     "android": "#3DDC84", "lineageos": "#23A9A9", "magisk": "#00AF9C", "cisco": "#1BA0D7", "wireshark": "#3A9BD9", "vscode": "#23A9F2", "visualstudio": "#A178DF", "androidstudio": "#3DDC84", "windows11": "#2D8FE6", "powershell": "#5391FE", "platformio": "#F5822A",
+    "flask": HI, "vercel": HI, "mqtt": HI, "burpsuite": "#FF6633", "metasploit": "#2596CD",
 }
 
 BASE_CSS = f"""
@@ -122,20 +123,24 @@ COLOR_FIX = {
 }
 
 
-# official logos that only exist as raster images: (file, viewBox crop)
-IMAGES = {"nmap": ("nmap.png", "0 34 256 96")}  # the Nmap eye, without the wordmark
+# official logos that only exist as raster images: (file, image size, viewBox crop)
+IMAGES = {
+    "nmap": ("nmap.png", 256, "0 34 256 96"),  # the Nmap eye, without the wordmark
+    "sqlmap": ("sqlmap.png", 180, "0 0 180 180"),
+    "termux": ("termux.png", 192, "0 0 192 192"),
+}
 
 
 def icon(name, x, y, size=20):
     if name in IMAGES:
-        file, crop = IMAGES[name]
+        file, px, crop = IMAGES[name]
         data = base64.b64encode((ICONS / "img" / file).read_bytes()).decode()
         # box matches the crop's aspect ratio, so nothing outside the crop can show
         cx_, cy_, cw_, ch_ = map(float, crop.split())
-        bw = size + 6
+        bw = size + 6 if ch_ < cw_ else size
         bh = bw * ch_ / cw_
         return (f'<svg x="{x - 3}" y="{y + (size - bh) / 2:.1f}" width="{bw}" height="{bh:.1f}" viewBox="{crop}">'
-                f'<image href="data:image/png;base64,{data}" width="256" height="256"/></svg>')
+                f'<image href="data:image/png;base64,{data}" width="{px}" height="{px}"/></svg>')
     if name == "oracle":
         # the Oracle wordmark is unreadable at icon size; use its red "O" ring (oracle.com's site icon)
         return (f'<ellipse cx="{x + size / 2}" cy="{y + size / 2}" rx="{size / 2 - 1.5}" ry="{size / 2 - 5}" '
@@ -222,22 +227,21 @@ def neofetch():
     ]
     rows = [
         ("Role", "full stack developer"),
-        ("OS", "Kali, BlackArch, Parrot OS, Windows, Windows Server"),
-        ("Shell", "bash, PowerShell"),
-        ("Editor", "Visual Studio Code"),
-        ("IDE", "Visual Studio, Android Studio, PlatformIO"),
-        ("Language", "Python, JavaScript, TypeScript, Java, C#, PHP"),
-        ("Frontend", "React, Vite, Tailwind CSS, HTML, CSS"),
-        ("Backend", "Firebase, Supabase, PHP, Docker"),
+        ("OS", "Kali, BlackArch, Parrot OS, Windows"),
+        ("Shell", "Bash, PowerShell"),
+        ("Language", "Python, Java, Kotlin, Dart, C#, PHP, JavaScript"),
+        ("Web", "React, Tailwind CSS, Laravel, Django, Flask"),
         ("Database", "MySQL, SQL Server, Oracle, SQLite, MongoDB"),
+        ("Cloud", "Firebase, Supabase, Vercel"),
+        ("Android", "Android apps, AOSP, custom ROMs, Magisk, Termux"),
+        ("Embedded", "ESP32-CAM, ESP8266, Arduino, Raspberry Pi, MQTT"),
+        ("ML / CV", "OpenCV, MediaPipe, NumPy, machine learning"),
+        ("Security", "Burp Suite, Metasploit, sqlmap, Nmap, Wireshark"),
+        ("Network", "Cisco Packet Tracer, Windows Server"),
+        ("Tools", "VS Code, Visual Studio, Android Studio, Figma"),
         ("AI", "Claude, Codex, Hermes, Kimi"),
-        ("ML / CV", "OpenCV, MediaPipe, machine learning"),
-        ("Android", "AOSP, rooting, custom ROMs, Magisk modules"),
-        ("Embedded", "ESP32, Arduino, Raspberry Pi"),
-        ("Network", "Cisco Packet Tracer, Nmap, Wireshark"),
-        ("Hardware", "PC and phone troubleshooting / repair"),
-        ("Security", "ethical hacking (own gear or with permission)"),
-        ("Level", "not an expert, still learning"),
+        ("Certs", "Cisco Ethical Hacker, Cisco Endpoint Security"),
+        ("Level", "always learning"),
     ]
     h = 118 + len(rows) * 24 + 46
     b = frame(h, "neofetch")
@@ -254,79 +258,72 @@ def neofetch():
     ansi = ["#2d333b", RED, GRN, YEL, BLU, MAG, CYN, TXT]
     for i, c in enumerate(ansi):
         b.append(f'<rect class="a" x="{ix + i * 30}" y="{118 + len(rows) * 24 + 2}" width="30" height="16" fill="{c}" style="{appear(1.1, 0.01)}"/>')
-    return svg(h, b, "neofetch: Role full stack developer. OS Kali Linux, BlackArch, Parrot OS, Windows, Windows Server. Network Cisco Packet Tracer, Nmap, Wireshark. Shell bash, PowerShell. Language Python, JavaScript, TypeScript, Java, C#, PHP. Frontend React, Vite, Tailwind CSS, HTML, CSS. Backend Firebase, Supabase, PHP, Docker. Database MySQL, SQL Server, Oracle, SQLite, MongoDB. Editor Visual Studio Code. IDE Visual Studio, Android Studio, PlatformIO. AI Claude, Codex, Hermes, Kimi. "
-                     "ML/CV OpenCV, MediaPipe. Android AOSP, rooting, custom ROMs, Magisk modules. Embedded ESP32, Arduino, "
-                     "Raspberry Pi. Hardware PC and phone repair. Security ethical hacking. Level: not an expert, still learning.")
+    return svg(h, b, "neofetch: " + ". ".join(f"{k} {v}" for k, v in rows) + ".")
 
 
 # ---------------------------------------------------------------- stack
 def stack():
-    # 3-column grid of directories
-    groups = [
-        ("lang/", [("python", "Python"), ("java", "Java"), ("csharp", "C#"), ("bash", "Bash / Shell"), ("powershell", "PowerShell")]),
-        ("ai/", [("claude", "Claude"), ("openai", "Codex"), ("nousresearch", "Hermes"), ("kimi", "Kimi")]),
-        ("ml-cv/", [("opencv", "OpenCV"), ("mediapipe", "MediaPipe"), ("numpy", "NumPy")]),
-        ("embedded/", [("espressif", "ESP32"), ("arduino", "Arduino"), ("raspberrypi", "Raspberry Pi")]),
-        ("os/", [("kalilinux", "Kali Linux"), ("archlinux", "BlackArch"), ("parrotsecurity", "Parrot OS"),
-                 ("windows11", "Windows"), ("windows11", "Windows Server")]),
-        ("android/", [("android", "AOSP"), ("lineageos", "Custom ROMs"), ("magisk", "Magisk modules")]),
-    ]
-    # full-width sections below the grid, laid out on the same three columns
-    wide = [
-        ("web/", [("html5", "HTML"), ("css3", "CSS"), ("javascript", "JavaScript"), ("typescript", "TypeScript"),
-                  ("react", "React"), ("vitejs", "Vite"), ("tailwindcss", "Tailwind CSS"), ("php", "PHP"), ("docker", "Docker")]),
-        ("network/", [("cisco", "Cisco Packet Tracer"), ("nmap", "Nmap"), ("wireshark", "Wireshark")]),
-        ("database/", [("mysql", "MySQL"), ("microsoftsqlserver", "Microsoft SQL Server"), ("oracle", "Oracle"),
-                       ("sqlite", "SQLite"), ("mongodb", "MongoDB"), ("firebase", "Firebase"), ("supabase", "Supabase")]),
-        ("tools/", [("vscode", "Visual Studio Code"), ("visualstudio", "Visual Studio"),
-                    ("androidstudio", "Android Studio"), ("platformio", "PlatformIO IDE")]),
-    ]
+    lang = ("lang/", [("python", "Python"), ("java", "Java"), ("kotlin", "Kotlin"), ("dart", "Dart"), ("csharp", "C#"),
+                      ("php", "PHP"), ("javascript", "JavaScript"), ("bash", "Bash"), ("powershell", "PowerShell")])
+    web = ("web/", [("html5", "HTML"), ("css3", "CSS"), ("react", "React"), ("tailwindcss", "Tailwind CSS"),
+                    ("laravel", "Laravel"), ("django", "Django"), ("flask", "Flask"), ("vercel", "Vercel")])
+    android = ("android/", [("android", "Android apps"), ("android", "AOSP"), ("lineageos", "Custom ROMs"),
+                            ("magisk", "Magisk modules"), ("termux", "Termux")])
+    embedded = ("embedded/", [("espressif", "ESP32"), ("espressif", "ESP8266"), ("arduino", "Arduino"),
+                              ("raspberrypi", "Raspberry Pi"), ("mqtt", "MQTT")])
+    mlcv = ("ml-cv/", [("opencv", "OpenCV"), ("mediapipe", "MediaPipe"), ("numpy", "NumPy")])
+    security = ("security/", [("burpsuite", "Burp Suite"), ("metasploit", "Metasploit"), ("sqlmap", "sqlmap"),
+                              ("nmap", "Nmap"), ("wireshark", "Wireshark"), ("cisco", "Cisco Packet Tracer"),
+                              ("windows11", "Windows Server")])
+    os_ = ("os/", [("kalilinux", "Kali Linux"), ("archlinux", "BlackArch"), ("parrotsecurity", "Parrot OS"),
+                   ("windows11", "Windows")])
+    ai = ("ai/", [("claude", "Claude"), ("openai", "Codex"), ("nousresearch", "Hermes"), ("kimi", "Kimi")])
+    tools = ("tools/", [("vscode", "Visual Studio Code"), ("visualstudio", "Visual Studio"),
+                        ("androidstudio", "Android Studio"), ("platformio", "PlatformIO"), ("figma", "Figma")])
+    database = ("database/", [("mysql", "MySQL"), ("microsoftsqlserver", "SQL Server"), ("oracle", "Oracle"),
+                              ("sqlite", "SQLite"), ("mongodb", "MongoDB"), ("firebase", "Firebase"),
+                              ("supabase", "Supabase")])
+    # a row is either three small directories side by side, or one wide directory whose items flow across three columns
+    layout = [[lang], [web], [android, embedded, mlcv], [security], [os_, ai, tools], [database]]
     colw, rowh, top = 264, 34, 74
-    row_heights = [26 + max(len(g[1]) for g in groups[r * 3:r * 3 + 3]) * rowh + 22 for r in range(2)]
-    wide_heights = [26 + -(-len(items) // 3) * rowh + 22 for _, items in wide]
-    h = top + sum(row_heights) + sum(wide_heights) - 10
+
+    def row_height(row):
+        n = max(len(items) for _, items in row) if len(row) == 3 else -(-len(row[0][1]) // 3)
+        return 26 + n * rowh + 22
+
+    h = top + sum(map(row_height, layout)) - 10
     b = frame(h)
     b.append(text(24, 38, [("$ ", "bl b"), ("ls", "g"), (" ~/stack", "t")]))
     b.append(f'<line x1="24" y1="54" x2="{W - 24}" y2="54" stroke="{LINE}"/>')
     y0 = top
-    for r in range(2):
-        for c in range(3):
-            label, items = groups[r * 3 + c]
-            x = 24 + c * colw
-            b.append(text(x, y0 + 14, [(label, "bl b")]))  # ls colors directories bold blue
+    for row in layout:
+        for c, (label, items) in enumerate(row):
+            b.append(text(24 + c * colw, y0 + 14, [(label, "bl b")]))  # ls colors directories bold blue
             for i, (ic, name) in enumerate(items):
-                iy = y0 + 30 + i * rowh
+                # side-by-side directories stack their items; a wide one wraps them across the columns
+                col, line = (c, i) if len(row) == 3 else (i % 3, i // 3)
+                x, iy = 24 + col * colw, y0 + 30 + line * rowh
                 b.append(icon(ic, x, iy))
                 b.append(text(x + 30, iy + 14, name))
-        y0 += row_heights[r]
-    for (label, items), wh in zip(wide, wide_heights):
-        b.append(text(24, y0 + 14, [(label, "bl b")]))
-        for i, (ic, name) in enumerate(items):
-            x, iy = 24 + (i % 3) * colw, y0 + 30 + (i // 3) * rowh
-            b.append(icon(ic, x, iy))
-            b.append(text(x + 30, iy + 14, name))
-        y0 += wh
-    return svg(h, b, "Stack. lang: Python, Java, C#, Bash, PowerShell. ai: Claude, Codex, Hermes, Kimi. ml-cv: OpenCV, MediaPipe, NumPy. "
-                     "embedded: ESP32, Arduino, Raspberry Pi. os: Kali Linux, BlackArch, Parrot OS, Windows, Windows Server. "
-                     "web: HTML, CSS, JavaScript, TypeScript, React, Vite, Tailwind CSS, PHP, Docker. network: Cisco Packet Tracer, Nmap, Wireshark. "
-                     "android: AOSP, custom ROMs, Magisk modules. "
-                     "database: MySQL, Microsoft SQL Server, Oracle, SQLite, MongoDB, Firebase, Supabase. tools: Visual Studio Code, Visual Studio, Android Studio, PlatformIO IDE.")
+        y0 += row_height(row)
+    return svg(h, b, "Stack. " + " ".join(f"{label.rstrip('/')}: {', '.join(n for _, n in items)}."
+                                         for row in layout for label, items in row))
 
 
 # ---------------------------------------------------------------- log
 def log():
     done = [
-        "wrote my own Magisk modules",
-        "hand and face tracking with MediaPipe + OpenCV",
+        "iCuCrops: IoT greenhouse system with ESP32, MQTT, Flask and Supabase",
+        "SmartDuck: IoT duck-egg incubator with ESP32, PHP and Supabase",
         "ESP32-CAM streaming live video into a machine learning model",
-        "full stack web apps with React, Firebase and Supabase",
-        "ESP32 / Arduino / Raspberry Pi builds: sensors, wiring and small gadgets",
+        "hand and face tracking with MediaPipe + OpenCV",
+        "wrote my own Magisk modules",
         "rooted phones, flashed custom ROMs, dug through AOSP",
-        "security labs on Kali, BlackArch and Parrot (own gear only)",
-        "PC and phone hardware troubleshooting and repair",
+        "security labs with Nmap, Burp Suite, sqlmap and Metasploit (own gear only)",
+        "Cisco Ethical Hacker and Endpoint Security certificates",
+        "PC and phone troubleshooting and repair",
     ]
     doing = [
-        "going deeper into machine learning",
         "building AOSP from source",
     ]
     h = 74 + len(done) * 26 + 18 + len(doing) * 26 + 10
@@ -344,9 +341,7 @@ def log():
         b.append(text(24, y, [("[*] ", "bl b"), (s, "t"), ("  in progress", "y")], cls="a", style=appear(t, 0.01)))
         y += 26
         t += 0.12
-    return svg(h, b, "Log. Done: Magisk modules, MediaPipe + OpenCV tracking, ESP32-CAM with machine learning, "
-                     "full stack web apps, ESP32/Arduino/Raspberry Pi builds, rooting and custom ROMs, security labs, "
-                     "hardware repair. In progress: machine learning, building AOSP from source.")
+    return svg(h, b, "now.log. Done: " + "; ".join(done) + ". In progress: " + "; ".join(doing) + ".")
 
 
 # ---------------------------------------------------------------- stats
@@ -466,5 +461,8 @@ for name, fn in [("hero", hero), ("neofetch", neofetch), ("stack", stack), ("log
         old.unlink()
     (OUT / f"{name}-{ver}.svg").write_text(content, encoding="utf-8")
     readme = re.sub(rf"\./assets/{name}(-\w+)?\.svg(\?v=\w+)?", f"./assets/{name}-{ver}.svg", readme)
+    # the README alt text repeats the panel's own label, so the two never drift apart
+    label = re.search(r'aria-label="([^"]*)"', content).group(1)
+    readme = re.sub(rf'(<img src="\./assets/{name}-{ver}\.svg"[^>]*? alt=")[^"]*"', lambda m: m.group(1) + label + '"', readme)
     print("wrote", name, ver)
 README.write_text(readme, encoding="utf-8", newline="\n")
