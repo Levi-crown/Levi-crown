@@ -6,4 +6,4 @@
 
 <img src="./assets/log-0179340d.svg" width="100%" alt="now.log. Done: iCuCrops: IoT greenhouse system with ESP32, MQTT, Flask and Supabase; SmartDuck: IoT duck-egg incubator with ESP32, PHP and Supabase; ESP32-CAM streaming live video into a machine learning model; hand and face tracking with MediaPipe + OpenCV; wrote my own Magisk modules; rooted phones, flashed custom ROMs, dug through AOSP; security labs with Nmap, Burp Suite, sqlmap and Metasploit (own gear only); Cisco Ethical Hacker and Endpoint Security certificates; PC and phone troubleshooting and repair. In progress: building AOSP from source." />
 
-<img src="./assets/stats-329d7fe0.svg" width="100%" alt="GitHub stats. 2,966 contributions since November 2024. Current streak 2 days, longest streak 29 days. 6 public repos, 44 stars." />
+<img src="./assets/stats-5287e72a.svg" width="100%" alt="GitHub stats. 2,975 contributions since November 2024. Current streak 3 days, longest streak 29 days. 6 public repos, 44 stars." />
