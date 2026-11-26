@@ -220,7 +220,7 @@ def neofetch():
         ("Android", "Android apps, AOSP, Magisk"),
         ("IoT", "ESP32, Arduino, Raspberry Pi"),
         ("Security", "Burp Suite, Metasploit, Nmap"),
-        ("AI", "Claude Code, Antigravity, Cursor"),
+        ("AI", "Claude Code, Gemini, Codex, Cursor"),
         ("Certs", "Cisco Ethical Hacker, Endpoint Security"),
         ("Level", "always learning"),
     ]
