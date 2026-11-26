@@ -136,8 +136,8 @@ def mascot():
             + linear("mKali", [(0, "#6aa8ff"), (1, "#1d4ea6")])
             + '<filter id="mDrop" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="3.5" flood-color="#000" flood-opacity=".55"/></filter>'
             + '<filter id="mBlur"><feGaussianBlur stdDeviation="5"/></filter>'
-            + f'<path id="mA" transform="translate(20 144) scale(2.2)" d="{LOGOS["apple"]}"/>'
-            + f'<path id="mD" transform="translate(176 136) scale(.5)" d="{LOGOS["android"]}"/>'
+            + f'<path id="mA" transform="translate(12 126) scale(2.2)" d="{LOGOS["apple"]}"/>'
+            + f'<path id="mD" transform="translate(176 122) scale(.48)" d="{LOGOS["android"]}"/>'
             + "</defs>")
     # only the eyes move
     css = ("@keyframes wink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}"
@@ -153,26 +153,33 @@ def mascot():
     body = "url(#mBody)"
     shirt = "url(#mShirt)"
 
-    # arms: a thick stroke from inside the torso out to behind each logo; the sleeve is the first stretch of
-    # the same path in shirt colour, so it follows the arm and its cuff sits square across it
-    arm_paths = ("M96 140Q70 152 54 182", "M154 140Q180 152 196 182")
-    arms = "".join(f'<path d="{d}" fill="none" stroke="{body}" stroke-width="22" stroke-linecap="round"/>' for d in arm_paths)
-    # masked to outside the torso, so the sleeve grows out of the shirt's side seam instead of sitting on it like a patch
-    sleeves = ('<mask id="mOut"><rect width="250" height="240" fill="#fff"/><ellipse cx="125" cy="152" rx="51" ry="66" fill="#000"/></mask>'
-               '<g mask="url(#mOut)">'
-               + "".join(f'<path d="{d}" pathLength="1" stroke-dasharray=".42 1" fill="none" stroke="{shirt}" stroke-width="26"/>'
-                         for d in arm_paths) + "</g>")
+    # arms cradle the logos: each flipper leaves the shoulder from behind the torso (so the sleeve grows out of
+    # the side seam), runs in front of the logo's base and its tip curls up the outer side, so the logo rests
+    # in the crook of the arm. The right arm is the left mirrored.
+    def mirror(d):
+        return re.sub(r"(-?[\d.]+) (-?[\d.]+)", lambda m: f"{250 - float(m.group(1)):g} {m.group(2)}", d)
+
+    arm_l = "M92 132C66 140 62 172 48 182C36 188 26 180 22 168"
+    arm_ps = (arm_l, mirror(arm_l))
+    arms = ('<g filter="url(#mDrop)" fill="none" stroke-linecap="round">'
+            + "".join(f'<path d="{d}" stroke="{body}" stroke-width="15"/>'
+                      # a soft rim light along the top of the flipper gives it volume
+                      f'<path d="{d}" stroke="#fff" stroke-opacity=".1" stroke-width="4" transform="translate(0 -3)"/>'
+                      # short sleeve: the first stretch of the same path in shirt colour, with a dark hem
+                      f'<path d="{d}" pathLength="1" stroke-dasharray=".3 1" stroke="{shirt}" stroke-width="20" stroke-linecap="butt"/>'
+                      f'<path d="{d}" pathLength="1" stroke-dasharray="0 .29 .012 1" stroke="#0b0d10" stroke-width="20" stroke-linecap="butt"/>'
+                      for d in arm_ps) + "</g>")
     tux = (f'<ellipse cx="125" cy="228" rx="74" ry="8" fill="#000" opacity=".5" filter="url(#mBlur)"/>'
-           f'<g filter="url(#mDrop)">{arms}'
+           f'<g filter="url(#mDrop)">'
            f'<ellipse cx="125" cy="152" rx="53" ry="68" fill="{body}"/>'
            f'<ellipse cx="125" cy="92" rx="38" ry="36" fill="{body}"/>'
-           # the tee follows the body's curve: clipped to the torso, hem curving round the hips
+           # the tee follows the body's curve: clipped to the torso, a scooped crew neck showing the white chest
            f'<clipPath id="mTorso"><ellipse cx="125" cy="152" rx="53" ry="68"/></clipPath><g clip-path="url(#mTorso)">'
-           f'<path d="M60 124Q125 108 190 124V194Q125 212 60 194z" fill="{shirt}"/>'
+           f'<ellipse cx="125" cy="128" rx="24" ry="18" fill="url(#mFace)"/>'
+           f'<path d="M60 122Q92 110 104 114Q125 138 146 114Q158 110 190 122V194Q125 212 60 194z" fill="{shirt}"/>'
+           f'<path d="M104 114Q125 138 146 114" fill="none" stroke="#56606c" stroke-width="3" stroke-linecap="round"/>'
            f'<path d="M66 193Q125 210 184 193" fill="none" stroke="#0b0d10" stroke-width="2.5"/>'
            f'<path d="M80 130c-4 20-4 44 2 62M170 130c4 20 4 44-2 62" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="3"/></g>'
-           f'{sleeves}'
-           f'<path d="M106 120q19 14 38 0" fill="none" stroke="#1f242b" stroke-width="4" stroke-linecap="round"/>'
            f'<path transform="translate(106 138) scale(1.6)" d="{LOGOS["github"]}" fill="#f0f3f6"/>'
            f'<ellipse cx="112" cy="72" rx="14" ry="7" transform="rotate(-25 112 72)" fill="#fff" opacity=".12"/>'
            f'<path d="M100 98c0-16 10-25 25-25s25 9 25 25c0 13-11 21-25 21s-25-8-25-21z" fill="url(#mFace)"/>'
@@ -184,11 +191,7 @@ def mascot():
            f'<ellipse cx="102" cy="216" rx="24" ry="10" fill="url(#mGold)"/><ellipse cx="148" cy="216" rx="24" ry="10" fill="url(#mGold)"/>'
            f'</g>')
     logos = extrude("mA", "mApple", "#6b7480") + extrude("mD", "mDroid", "#0f7a3f")
-    # the flipper ends cup each logo from the front and below, so Tux is holding it, not standing beside it
-    grip = "".join(f'<ellipse cx="{x}" cy="190" rx="16" ry="10" transform="rotate({a} {x} 190)" fill="{body}" filter="url(#mDrop)"/>'
-                   f'<ellipse cx="{x - 3 * a / abs(a)}" cy="187" rx="7" ry="2.5" transform="rotate({a} {x} 190)" fill="#fff" opacity=".12"/>'
-                   for x, a in ((60, -20), (200, 20)))
-    return f"<style>{css}</style>{defs}{backdrop}{tux}{logos}{grip}"
+    return f"<style>{css}</style>{defs}{backdrop}{logos}{arms}{tux}"
 
 
 # ---------------------------------------------------------------- neofetch
