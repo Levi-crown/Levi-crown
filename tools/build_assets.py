@@ -125,12 +125,12 @@ def mascot():
                 + "".join(f'<stop offset="{o}" stop-color="{c}"/>' for o, c in stops) + "</linearGradient>")
 
     defs = ("<defs>"
-            + radial("mBody", [(0, "#5b6472"), (.45, "#2a2f37"), (1, "#0b0d10")])
+            + radial("mBody", [(0, "#3e444d"), (.45, "#16191d"), (1, "#000000")])
             + radial("mFace", [(0, "#ffffff"), (.65, "#e3e8ee"), (1, "#a9b2bc")], cx=".42", cy=".35")
             + radial("mEye", [(0, "#ffffff"), (.7, "#eef1f4"), (1, "#a7b0ba")], cx=".4", cy=".35")
             + radial("mGold", [(0, "#ffd889"), (.55, "#f2a51f"), (1, "#a86200")], cx=".4", cy=".3")
             + radial("mGlow", [(0, "#367bf0"), (.55, "#1d4ea6"), (1, BG)], cx=".5", cy=".5", r=".5")
-            + linear("mShirt", [(0, "#2b3139"), (1, "#0a0c0f")], x2="0")
+            + radial("mShirt", [(0, "#5a6370"), (.5, "#343b45"), (1, "#181c21")], cx=".35", cy=".2", r=".9")
             + linear("mApple", [(0, "#ffffff"), (.5, "#d3d9e0"), (1, "#8d97a2")])
             + linear("mDroid", [(0, "#7cf5b4"), (.5, "#3ddc84"), (1, "#169a52")])
             + linear("mKali", [(0, "#6aa8ff"), (1, "#1d4ea6")])
@@ -153,30 +153,43 @@ def mascot():
     backdrop = (f'<circle class="glow" cx="125" cy="112" r="112" fill="url(#mGlow)" opacity=".55"/>'
                 f'<path transform="translate(-4 -14) scale(10.8)" d="{LOGOS["kali"]}" fill="url(#mKali)" opacity=".95"/>')
     body = "url(#mBody)"
+    shirt = "url(#mShirt)"
+
+    def flipper(cx, angle, side):
+        # flipper hangs from the shoulder; its top is covered by the tee's short sleeve
+        clip = f"mF{side}"
+        return (f'<g transform="rotate({angle} {cx} 130)"><clipPath id="{clip}"><ellipse cx="{cx}" cy="158" rx="12" ry="30"/></clipPath>'
+                f'<ellipse cx="{cx}" cy="158" rx="12" ry="30" fill="{body}"/>'
+                f'<g clip-path="url(#{clip})"><rect x="{cx - 13}" y="126" width="26" height="20" fill="{shirt}"/>'
+                f'<path d="M{cx - 13} 145q13 4 26 0" stroke="#0b0d10" stroke-width="2" fill="none"/></g></g>')
+
     tux = (f'<ellipse cx="125" cy="228" rx="74" ry="8" fill="#000" opacity=".5" filter="url(#mBlur)"/>'
            f'<g filter="url(#mDrop)">'
-           f'<ellipse cx="80" cy="150" rx="14" ry="34" transform="rotate(30 80 150)" fill="{body}"/>'
-           f'<ellipse cx="170" cy="150" rx="14" ry="34" transform="rotate(-30 170 150)" fill="{body}"/>'
            f'<ellipse cx="125" cy="152" rx="53" ry="68" fill="{body}"/>'
            f'<ellipse cx="125" cy="92" rx="38" ry="36" fill="{body}"/>'
+           # the tee follows the body's curve: clipped to the torso, hem curving round the hips
+           f'<clipPath id="mTorso"><ellipse cx="125" cy="152" rx="53" ry="68"/></clipPath><g clip-path="url(#mTorso)">'
+           f'<path d="M60 124Q125 108 190 124V194Q125 212 60 194z" fill="{shirt}"/>'
+           f'<path d="M66 193Q125 210 184 193" fill="none" stroke="#0b0d10" stroke-width="2.5"/>'
+           f'<path d="M80 130c-4 20-4 44 2 62M170 130c4 20 4 44-2 62" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="3"/></g>'
+           # arms in front of the torso, reaching down to the logos
+           f'{flipper(74, 10, "L")}{flipper(176, -10, "R")}'
+           f'<path d="M106 120q19 14 38 0" fill="none" stroke="#1f242b" stroke-width="4" stroke-linecap="round"/>'
+           f'<path transform="translate(106 138) scale(1.6)" d="{LOGOS["github"]}" fill="#f0f3f6"/>'
            f'<ellipse cx="112" cy="72" rx="14" ry="7" transform="rotate(-25 112 72)" fill="#fff" opacity=".12"/>'
            f'<path d="M100 98c0-16 10-25 25-25s25 9 25 25c0 13-11 21-25 21s-25-8-25-21z" fill="url(#mFace)"/>'
            f'<g class="wink"><ellipse cx="115" cy="92" rx="7" ry="9" fill="url(#mEye)"/><ellipse cx="135" cy="92" rx="7" ry="9" fill="url(#mEye)"/>'
            f'<ellipse cx="116.5" cy="94" rx="3.4" ry="4.4" fill="#111"/><ellipse cx="133.5" cy="94" rx="3.4" ry="4.4" fill="#111"/>'
            f'<circle cx="117.6" cy="92.4" r="1.2" fill="#fff"/><circle cx="134.6" cy="92.4" r="1.2" fill="#fff"/></g>'
-           # GitHub tee: shaded shirt, collar seam, the real GitHub mark on the chest
-           f'<path d="M84 126c26-9 56-9 82 0l7 64c-26 24-70 24-96 0z" fill="url(#mShirt)"/>'
-           f'<path d="M110 124c5 9 25 9 30 0" fill="none" stroke="#3d444d" stroke-width="2.2" stroke-linecap="round"/>'
-           f'<path d="M92 132c-2 18-2 36 0 52M158 132c2 18 2 36 0 52" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="2"/>'
-           f'<path transform="translate(106 140) scale(1.6)" d="{LOGOS["github"]}" fill="#f0f3f6"/>'
            f'<path d="M108 106c9-7 25-7 34 0-4 9-12 13-17 13s-13-4-17-13z" fill="url(#mGold)"/>'
            f'<path d="M111 107c8 3 20 3 28 0" fill="none" stroke="#8a5200" stroke-width="1.2"/>'
            f'<ellipse cx="102" cy="216" rx="24" ry="10" fill="url(#mGold)"/><ellipse cx="148" cy="216" rx="24" ry="10" fill="url(#mGold)"/>'
            f'</g>')
     logos = (f'<g class="hop">{extrude("mA", "mApple", "#6b7480")}</g>'
              f'<g class="hop2">{extrude("mD", "mDroid", "#0f7a3f")}</g>')
-    # flipper tips over the logos so Tux grips them
-    grip = "".join(f'<ellipse cx="{x}" cy="{y}" rx="10" ry="8" fill="{body}"/>' for x, y in ((72, 178), (178, 176)))
+    # the flipper tip curls round the front of each logo, so Tux is gripping it, not standing beside it
+    grip = (f'<path d="M58 186c4-9 12-14 20-12 4 2 4 7 0 10-6 4-13 6-20 2z" fill="{body}" filter="url(#mDrop)"/>'
+            f'<path d="M192 186c-4-9-12-14-20-12-4 2-4 7 0 10 6 4 13 6 20 2z" fill="{body}" filter="url(#mDrop)"/>')
     return f"<style>{css}</style>{defs}{backdrop}{tux}{logos}{grip}"
 
 
