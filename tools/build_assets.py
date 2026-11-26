@@ -31,7 +31,7 @@ text{{font-family:{FONT};white-space:pre}}
 @keyframes in{{to{{opacity:1}}}}
 @keyframes vis{{0%,100%{{opacity:1}}}}
 @media (prefers-reduced-motion:reduce){{
-  *{{animation:none!important}} .a{{opacity:1!important}} .cv,.cur{{display:none}}
+  *{{animation:none!important}} .a{{opacity:1!important}} .cv,.cur,.game{{display:none}}
 }}
 """
 
@@ -172,40 +172,6 @@ YYYYYYKKKKKKKKYYYYYY
     return svg(h, b, "neofetch: " + ". ".join(f"{k} {v}" for k, v in rows) + ".")
 
 
-# ---------------------------------------------------------------- log
-def log():
-    done = [
-        "iCuCrops: IoT greenhouse system with ESP32, MQTT, Flask and Supabase",
-        "SmartDuck: IoT duck-egg incubator with ESP32, PHP and Supabase",
-        "ESP32-CAM streaming live video into a machine learning model",
-        "hand and face tracking with MediaPipe + OpenCV",
-        "wrote my own Magisk modules",
-        "rooted phones, flashed custom ROMs, dug through AOSP",
-        "security labs with Nmap, Burp Suite, sqlmap and Metasploit (own gear only)",
-        "Cisco Ethical Hacker and Endpoint Security certificates",
-        "PC and phone troubleshooting and repair",
-    ]
-    doing = [
-        "building AOSP from source",
-    ]
-    start = TOP + 34
-    h = start - 10 + len(done) * 26 + 18 + len(doing) * 26 + 10
-    b = frame(h)
-    b += prompt(24, TOP, 0.1, [("cat", "g"), (" ~/notes/now.log", "t")], 0.3, 0.7, "l")
-    y, t = start, 1.1
-    # metasploit-style markers: [+] success, [*] status
-    for s in done:
-        b.append(text(24, y, [("[+] ", "g b"), (s, "t")], cls="a", style=appear(t, 0.01)))
-        y += 26
-        t += 0.12
-    y += 18
-    for s in doing:
-        b.append(text(24, y, [("[*] ", "bl b"), (s, "t"), ("  in progress", "y")], cls="a", style=appear(t, 0.01)))
-        y += 26
-        t += 0.12
-    return svg(h, b, "now.log. Done: " + "; ".join(done) + ". In progress: " + "; ".join(doing) + ".")
-
-
 # ---------------------------------------------------------------- stats
 USER = "Levi-crown"
 CAL = "contributionCalendar{totalContributions weeks{contributionDays{date contributionCount}}}"
@@ -291,12 +257,73 @@ def stats():
 
     x0 = 24
     t0 = 1.0 + len(rows) * 0.12
+    # chomper game: a muncher crawls the active weeks eating contribution cells while two viruses chase it;
+    # the four busiest days are power pellets that leave the viruses crashed for a moment
+    first = next((wi for wi, w in enumerate(weeks) if any(d["contributionCount"] for d in w["contributionDays"])), 0)
+    path = [(wi, r if (wi - first) % 2 == 0 else 6 - r) for wi in range(first, len(weeks)) for r in range(7)]
+    tick = min(0.15, max(0.05, 16 / len(path)))  # seconds per cell; keeps one round near 16 s
+    loop, start, last = len(path) * tick, t0 + 1.2, max(1, len(path) - 1)
+    at = {pos: n for n, pos in enumerate(path)}
+    css, power = [], []
+    busiest = sorted(((d["contributionCount"], w_i, d["date"]) for w_i, w in enumerate(weeks) for d in w["contributionDays"]
+                      if d["contributionCount"] and w_i >= first), reverse=True)
+    pellets = {date for _, _, date in busiest[:4]}
+
+    def xy(wi, r):
+        return x0 + wi * step, top + r * step
+
     for wi, w in enumerate(weeks):
-        # the first week can start mid-week; place days by weekday
-        cells = "".join(f'<rect x="{x0 + wi * step:.1f}" y="{top + ((dt.date.fromisoformat(d["date"]).weekday() + 1) % 7) * step:.1f}" '
-                        f'width="{cell}" height="{cell}" rx="2" fill="{shade(d["contributionCount"])}"/>'
-                        for d in w["contributionDays"])
-        b.append(f'<g class="a" style="{appear(t0 + wi * 0.012, 0.05)}">{cells}</g>')
+        base, food = [], []
+        for d in w["contributionDays"]:
+            # the first week can start mid-week; place days by weekday
+            r = (dt.date.fromisoformat(d["date"]).weekday() + 1) % 7
+            x, y = xy(wi, r)
+            rect = f'<rect x="{x:.1f}" y="{y:.1f}" width="{cell}" height="{cell}" rx="2" fill="{{}}"{{}}/>'
+            base.append(rect.format(levels[0], ""))
+            n = d["contributionCount"]
+            if n and (wi, r) in at:
+                p = at[wi, r] * 100 / last  # share of the round when the muncher reaches this cell
+                css.append(f"@keyframes e{len(css)}{{{p:.2f}%,100%{{opacity:0}}}}")
+                food.append(rect.format(shade(n), f' style="animation:e{len(css) - 1} {loop:.2f}s step-end {start:.2f}s infinite"'))
+                if d["date"] in pellets:
+                    power.append(p)
+            elif n:
+                food.append(rect.format(shade(n), ""))
+        b.append(f'<g class="a" style="{appear(t0 + wi * 0.012, 0.05)}">{"".join(base + food)}</g>')
+
+    # power pellets: viruses stay crashed for 2.5 s after each one is eaten
+    scare, span = [], 2.5 / loop * 100
+    for p in power:
+        if scare and p <= scare[-1][1]:
+            scare[-1][1] = p + span
+        else:
+            scare.append([p, p + span])
+    css.append("@keyframes scare{" + "".join(f"{a:.2f}%{{opacity:1}}{min(z, 100):.2f}%{{opacity:0}}" for a, z in scare) + "}")
+    route = "M" + "L".join(f"{x + cell / 2:.1f} {y + cell / 2:.1f}" for x, y in (xy(*pos) for pos in path))
+    css.append(f'@keyframes crawl{{from{{offset-distance:0%}}to{{offset-distance:100%}}}}@keyframes jaw{{50%{{opacity:0}}}}'
+               f'.mv{{offset-path:path("{route}");offset-rotate:0deg}}.mv.head{{offset-rotate:auto}}.ko{{opacity:0}}')
+    h2 = (cell + 1) / 2
+    octagon = f'M{-h2 / 2:.1f} {-h2:.1f}H{h2 / 2:.1f}L{h2:.1f} {-h2 / 2:.1f}V{h2 / 2:.1f}L{h2 / 2:.1f} {h2:.1f}H{-h2 / 2:.1f}L{-h2:.1f} {h2 / 2:.1f}V{-h2 / 2:.1f}Z'
+
+    def mover(lag, sprite, cls="mv"):
+        t = start + lag * tick
+        return (f'<g class="a" style="{appear(t, 0.05)}"><g class="{cls}" style="animation:crawl {loop:.2f}s linear {t:.2f}s infinite both">'
+                f'{sprite}</g></g>')
+
+    b.append(f'<style>{"".join(css)}</style><g class="game">')
+    for lag, color in [(14, MAG), (8, RED)]:
+        eyes = "".join(f'<rect x="{ex - 1.6:.1f}" y="-2.6" width="3.2" height="3.2" fill="{HI}"/><rect x="{ex - 0.4:.1f}" y="-1.6" width="1.4" height="1.6" fill="{BG}"/>'
+                       for ex in (-2.4, 2.4))
+        crashed = "".join(f'<path d="M{ex - 1.4:.1f} -2.4l2.8 2.8m0-2.8l-2.8 2.8" stroke="{HI}" stroke-width="1.1"/>' for ex in (-2.4, 2.4))
+        b.append(mover(lag, f'<path d="{octagon}" fill="{color}"/>{eyes}'
+                            f'<g class="ko" style="animation:scare {loop:.2f}s step-end {start:.2f}s infinite">'
+                            f'<path d="{octagon}" fill="{DIM}"/>{crashed}</g>'))
+    # the muncher faces right; offset-rotate turns it toward wherever it is heading
+    b.append(mover(0, f'<path d="M{-h2:.1f} {-h2:.1f}H{h2:.1f}V{-h2 / 3:.1f}L0 0L{h2:.1f} {h2 / 3:.1f}V{h2:.1f}H{-h2:.1f}Z" fill="{CYN}"/>'
+                      f'<rect x="{-h2:.1f}" y="{-h2:.1f}" width="{2 * h2:.1f}" height="{2 * h2:.1f}" rx="2" fill="{CYN}" '
+                      f'style="animation:jaw {tick * 4:.2f}s step-end infinite"/>'
+                      f'<rect x="-1.5" y="{-h2 + 2:.1f}" width="2.5" height="2.5" fill="{BG}"/>', "mv head"))
+    b.append("</g>")
     ly = round(top + 7 * step + 16)
     cell, gap = 11, 3  # legend swatches stay small
     lx = W - 24 - len(levels) * (cell + gap) - 4 - 4 * cw(12)
@@ -311,7 +338,7 @@ def stats():
 
 README = Path(__file__).parent.parent / "README.md"
 readme = README.read_text(encoding="utf-8")
-for name, fn in [("neofetch", neofetch), ("log", log), ("stats", stats)]:
+for name, fn in [("neofetch", neofetch), ("stats", stats)]:
     content = fn()
     if content is None:
         print("skipped", name, "(no GitHub token)")
