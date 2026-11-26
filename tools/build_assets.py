@@ -133,7 +133,7 @@ def mascot():
             + radial("mShirt", [(0, "#b58cf5"), (.55, "#7646d0"), (1, "#3a1a78")], cx=".35", cy=".2", r=".9")
             + linear("mApple", [(0, "#ffffff"), (.5, "#d3d9e0"), (1, "#8d97a2")])
             + linear("mDroid", [(0, "#7cf5b4"), (.5, "#3ddc84"), (1, "#169a52")])
-            + '<linearGradient id="mWin" gradientUnits="userSpaceOnUse" x1="107" y1="130" x2="143" y2="166"><stop offset="0" stop-color="#4cc2ff"/><stop offset="1" stop-color="#0067c0"/></linearGradient>'
+            + '<linearGradient id="mWin" gradientUnits="userSpaceOnUse" x1="107" y1="141" x2="143" y2="177"><stop offset="0" stop-color="#4cc2ff"/><stop offset="1" stop-color="#0067c0"/></linearGradient>'
             + linear("mKali", [(0, "#6aa8ff"), (1, "#1d4ea6")])
             + '<filter id="mDrop" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="3.5" flood-color="#000" flood-opacity=".55"/></filter>'
             + '<filter id="mBlur"><feGaussianBlur stdDeviation="5"/></filter>'
@@ -173,16 +173,19 @@ def mascot():
     tux = (f'<ellipse cx="125" cy="228" rx="74" ry="8" fill="#000" opacity=".5" filter="url(#mBlur)"/>'
            f'<g filter="url(#mDrop)">'
            f'<ellipse cx="125" cy="152" rx="53" ry="68" fill="{body}"/>'
-           f'<ellipse cx="125" cy="92" rx="38" ry="36" fill="{body}"/>'
-           # the tee follows the body's curve: clipped to the torso, a scooped crew neck showing the white chest
+           # the tee follows the body's curve (clipped to the torso); the head, drawn after it, sits in a ribbed
+           # crew-neck collar whose lower arc shows below the chin, over a soft shadow the head casts on the tee
            f'<clipPath id="mTorso"><ellipse cx="125" cy="152" rx="53" ry="68"/></clipPath><g clip-path="url(#mTorso)">'
-           f'<ellipse cx="125" cy="128" rx="24" ry="18" fill="url(#mFace)"/>'
-           f'<path d="M60 122Q92 110 104 114Q125 138 146 114Q158 110 190 122V194Q125 212 60 194z" fill="{shirt}"/>'
-           f'<path d="M104 114Q125 138 146 114" fill="none" stroke="#c6a8f8" stroke-width="3" stroke-linecap="round"/>'
+           f'<path d="M60 80H190V194Q125 212 60 194z" fill="{shirt}"/>'
+           f'<path d="M90 120Q81 128 77 140M160 120Q169 128 173 140" fill="none" stroke="#2a1158" stroke-opacity=".4" stroke-width="1.5"/>'
+           f'<ellipse cx="125" cy="131" rx="36" ry="9" fill="#1c0b40" opacity=".45" filter="url(#mBlur)"/>'
+           f'<ellipse cx="125" cy="94" rx="41" ry="38" fill="none" stroke="#4a22a0" stroke-width="7"/>'
+           f'<ellipse cx="125" cy="94" rx="44.5" ry="41.5" fill="none" stroke="#b892f7" stroke-opacity=".7" stroke-width="1.2"/>'
            f'<path d="M66 193Q125 210 184 193" fill="none" stroke="#2a1158" stroke-width="2.5"/>'
            f'<path d="M80 130c-4 20-4 44 2 62M170 130c4 20 4 44-2 62" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="3"/></g>'
-           + "".join(f'<rect x="{107 + dx}" y="{130 + dy}" width="17" height="17" rx="1" fill="url(#mWin)"/>' for dx in (0, 19) for dy in (0, 19))
-           + f'<path transform="translate(117.8 175) scale(.6)" d="{LOGOS["github"]}" fill="#f0f3f6"/>'
+           + "".join(f'<rect x="{107 + dx}" y="{141 + dy}" width="17" height="17" rx="1" fill="url(#mWin)"/>' for dx in (0, 19) for dy in (0, 19))
+           + f'<path transform="translate(117.8 183) scale(.6)" d="{LOGOS["github"]}" fill="#f0f3f6"/>'
+           f'<ellipse cx="125" cy="92" rx="38" ry="36" fill="{body}"/>'
            f'<ellipse cx="112" cy="72" rx="14" ry="7" transform="rotate(-25 112 72)" fill="#fff" opacity=".12"/>'
            f'<path d="M100 98c0-16 10-25 25-25s25 9 25 25c0 13-11 21-25 21s-25-8-25-21z" fill="url(#mFace)"/>'
            f'<g class="wink"><ellipse cx="115" cy="92" rx="7" ry="9" fill="url(#mEye)"/><ellipse cx="135" cy="92" rx="7" ry="9" fill="url(#mEye)"/>'
