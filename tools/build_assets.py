@@ -32,7 +32,7 @@ text{{font-family:{FONT};white-space:pre}}
 @keyframes in{{to{{opacity:1}}}}
 @keyframes vis{{0%,100%{{opacity:1}}}}
 @media (prefers-reduced-motion:reduce){{
-  *{{animation:none!important}} .a{{opacity:1!important}} .draw{{stroke-dashoffset:0!important}} .cv,.cur,.game,.ping{{display:none}}
+  *{{animation:none!important}} .a{{opacity:1!important}} .draw{{stroke-dashoffset:0!important}} .cv,.cur,.game,.ping{{display:none}} .roll{{transform:none!important}}
 }}
 """
 
@@ -108,58 +108,61 @@ def prompt(x, y, t, cmd=None, type_start=None, type_dur=None, kid=""):
     return out
 
 
+# GitHub's mark (Octicons, MIT), 16x16
+OCTOCAT = ("M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94"
+           "-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07"
+           "-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27"
+           ".68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95"
+           ".29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z")
+
+
+def mascot():
+    """Tux in a GitHub tee, the Apple logo in one flipper, the Android robot in the other, the Kali dragon behind.
+    Drawn in a 250 x 240 box; the dragon's head bobs, Tux blinks and both logos float."""
+    blue, deep, body, edge, ink, green, silver = "#367bf0", "#1f56c4", "#30363d", "#545d68", "#1b1f24", "#3ddc84", "#d0d7de"
+    css = ("@keyframes bob{50%{transform:rotate(-4deg)}}@keyframes wink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}"
+           "@keyframes hop{50%{transform:translateY(-4px)}}"
+           ".bob{transform-box:fill-box;transform-origin:10% 100%;animation:bob 3.2s ease-in-out infinite}"
+           ".wink{transform-box:fill-box;transform-origin:center;animation:wink 4s infinite}"
+           ".hop{animation:hop 1.6s ease-in-out infinite}.hop2{animation:hop 1.6s ease-in-out .8s infinite}")
+    dragon = (f'<path d="M104 112C78 86 46 64 16 30c12 30 12 40 22 50-12 0-18 8-20 18 18-4 28 4 30 12-10 2-14 8-14 16 22-8 44-6 70 6z" fill="{deep}"/>'
+              f'<path d="M150 212c40 10 76 2 84-20 4-12-4-20-12-14" fill="none" stroke="{blue}" stroke-width="10" stroke-linecap="round"/>'
+              f'<path d="M224 176l-12-8 2 14z" fill="{blue}"/>'
+              f'<g class="bob"><path d="M140 140C196 124 214 92 198 52" fill="none" stroke="{blue}" stroke-width="20" stroke-linecap="round"/>'
+              f'<path d="M206 62l14-4-8 12zM210 86h14l-10 10zM200 108l12 6-14 4z" fill="{deep}"/>'
+              f'<path d="M214 42c-6-16-28-20-46-12l-22 8c-5 2-4 9 2 9l22 1c8 7 26 12 40 6z" fill="{blue}"/>'
+              f'<path d="M198 30l22-22-8 26zM208 36l28-12-20 20z" fill="{deep}"/>'
+              f'<path d="M150 45l20 1" stroke="{deep}" stroke-width="2"/><circle cx="186" cy="36" r="3" fill="{RED}"/></g>')
+    tux = (f'<ellipse cx="76" cy="150" rx="13" ry="32" transform="rotate(28 76 150)" fill="{body}" stroke="{edge}" stroke-width="1.5"/>'
+           f'<ellipse cx="164" cy="150" rx="13" ry="32" transform="rotate(-28 164 150)" fill="{body}" stroke="{edge}" stroke-width="1.5"/>'
+           f'<ellipse cx="120" cy="94" rx="36" ry="34" fill="{body}" stroke="{edge}" stroke-width="1.5"/>'
+           f'<ellipse cx="120" cy="150" rx="50" ry="66" fill="{body}" stroke="{edge}" stroke-width="1.5"/>'
+           f'<ellipse cx="120" cy="94" rx="34.5" ry="32.5" fill="{body}"/>'
+           f'<path d="M96 98c0-16 10-24 24-24s24 8 24 24c0 12-10 20-24 20s-24-8-24-20z" fill="{HI}"/>'
+           f'<g class="wink"><ellipse cx="110" cy="92" rx="6.5" ry="8.5" fill="#fff" stroke="{ink}" stroke-width="1.2"/>'
+           f'<ellipse cx="130" cy="92" rx="6.5" ry="8.5" fill="#fff" stroke="{ink}" stroke-width="1.2"/>'
+           f'<ellipse cx="111.5" cy="94" rx="3" ry="4" fill="{ink}"/><ellipse cx="128.5" cy="94" rx="3" ry="4" fill="{ink}"/></g>'
+           f'<path d="M82 124c24-8 52-8 76 0l6 62c-24 22-64 22-88 0z" fill="{BAR}" stroke="{LINE}" stroke-width="1.5"/>'
+           f'<path transform="translate(104 142) scale(2)" d="{OCTOCAT}" fill="{HI}"/>'
+           f'<path d="M104 106c8-6 24-6 32 0-4 8-12 12-16 12s-12-4-16-12z" fill="{YEL}"/>'
+           f'<path d="M106 107c8 3 20 3 28 0" fill="none" stroke="#b7862b" stroke-width="1.2"/>'
+           f'<ellipse cx="98" cy="214" rx="22" ry="9" fill="{YEL}"/><ellipse cx="142" cy="214" rx="22" ry="9" fill="{YEL}"/>')
+    apple = (f'<mask id="bite"><rect width="250" height="240" fill="#fff"/><circle cx="84" cy="168" r="9" fill="#000"/></mask>'
+             f'<g class="hop"><path mask="url(#bite)" d="M56 160c-7-8-22-7-25 8-3 16 8 32 18 32 3 0 4-2 7-2s4 2 7 2c10 0 20-14 22-26-2-14-17-21-29-14z" fill="{silver}"/>'
+             f'<path d="M57 154c-1-10 5-16 13-18 0 9-6 16-13 18z" fill="{silver}"/></g>')
+    android = (f'<g class="hop2" fill="{green}"><path d="M170 160a18 18 0 0 1 36 0z"/>'
+               f'<path d="M178 144l-5-8M198 144l5-8" stroke="{green}" stroke-width="2.5" stroke-linecap="round"/>'
+               f'<circle cx="180" cy="152" r="2.2" fill="{BG}"/><circle cx="196" cy="152" r="2.2" fill="{BG}"/>'
+               f'<rect x="170" y="163" width="36" height="28" rx="4"/><rect x="162" y="164" width="6" height="20" rx="3"/>'
+               f'<rect x="208" y="164" width="6" height="20" rx="3"/><rect x="178" y="188" width="6" height="12" rx="3"/>'
+               f'<rect x="192" y="188" width="6" height="12" rx="3"/></g>')
+    # flipper tips drawn over the logos so Tux grips them
+    grip = "".join(f'<ellipse cx="{x}" cy="176" rx="9" ry="7" fill="{body}" stroke="{edge}" stroke-width="1.5"/>' for x in (76, 164))
+    return f"<style>{css}</style>{dragon}{tux}{apple}{android}{grip}"
+
+
 # ---------------------------------------------------------------- neofetch
 def neofetch():
-    # Tux as pixel art: ASCII penguins drift out of line when GitHub falls back to another font
-    tux = """
-.......KKKKKK.......
-......KKKKKKKK......
-.....KKKKKKKKKK.....
-.....KEEKKKKEEK.....
-.....KEPKKKKPEK.....
-.....KEEKKKKEEK.....
-.....KKYYYYYYKK.....
-....KKYYYYYYYYKK....
-....KKKYYYYYYKKK....
-...KKKWWYYYYWWKKK...
-...KKWWWWWWWWWWKK...
-..KKWWWWWWWWWWWWKK..
-..KKWWWWWWWWWWWWKK..
-.KKWWWWWWWWWWWWWWKK.
-.KKWWWWWWWWWWWWWWKK.
-.KKWWWWWWWWWWWWWWKK.
-.KKWWWWWWWWWWWWWWKK.
-..KKWWWWWWWWWWWWKK..
-.YYYKWWWWWWWWWWKYYY.
-YYYYYKWWWWWWWWKYYYYY
-YYYYYYKKKKKKKKYYYYYY
-.YYYYY........YYYYY.
-""".split()
-    # Tux wears a GitHub tee (belly rows become shirt), holds the Apple logo and the Android robot,
-    # and the Kali dragon coils behind him; layers are painted back to front
-    tux = [row.replace("W", "S") if 10 <= r <= 19 else row for r, row in enumerate(tux)]
-    octocat = [".O...O.", ".OOOOO.", "OOOOOOO", "OO.O.OO", "OOOOOOO", ".OO.OO."]
-    apple = ["......A..", ".....AA..", ".....A...", ".AAA.AAA.", "AAAAAAAAA", "AAAAAAA..", "AAAAAA...",
-             "AAAAAAA..", "AAAAAAAAA", ".AAAAAAA.", "..AA.AA.."]
-    android = [".G.....G.", "..GGGGG..", ".GGGGGGG.", ".GgGGGgG.", ".GGGGGGG.", ".........",
-               "GGGGGGGGG", "GGGGGGGGG", ".GGGGGGG.", "..G...G.."]
-    head = [".........d..d.", "........dDDdD.", "....DDDDDDDDD.", "..DDDDDeDDDDD.",
-            "DDDDDDDDDDDDd.", ".ddDDDDDDDDDd.", "....dd..DDDDd.", "........DDDDd."]
-    neck = [".DDDDdd", ".DDDDd.", "DDDDdd.", "DDDDd..", "DDDd...", "DDDd..."]
-    shoulder = ["DDDDDDDD", "DDDDDDd.", "DDDDDd..", "DDDd...."]  # neck dives behind Tux
-    wing = [".d..........", ".Dd.........", ".DDd...d....", ".DDDd.dD....", ".DDDDdDD....", ".DDDDDDDd...",
-            "..DDDDDDDD..", "...DDDDDDDDDDDDD", "....DDDDDDDDDDDD", "......DDDDDDDDDD"]
-    tail = ["..........d", ".........dD", "DDDDDDDDDDd", "dDDDDDDDdd."]  # out from behind the feet, curling up
-    layers = [(head, 23, 0), (neck, 30, 8), (shoulder, 25, 13), (wing, 0, 2), (tail, 26, 28),
-              (tux, 9, 9), (octocat, 15, 20), (apple, 2, 17), (android, 27, 18)]
-    art_colors = {"K": "#3d444d", "E": HI, "P": BG, "W": HI, "Y": YEL, "S": "#161b22", "O": HI,
-                  "D": "#367bf0", "d": "#1d4ea6", "e": RED, "A": "#c9d1d9", "G": "#3ddc84", "g": BG}
-    art = {}
-    for sprite, ox, oy in layers:
-        for r, row in enumerate(sprite):
-            for c, ch in enumerate(row):
-                if ch != ".":
-                    art[oy + r, ox + c] = art_colors[ch]
     rows = [
         ("Role", "AI-native full-stack developer"),
         ("OS", "Kali Linux, Windows"),
@@ -174,20 +177,9 @@ YYYYYYKKKKKKKKYYYYYY
     h = y0 + len(rows) * 24 + 40
     b = frame(h)
     b += prompt(24, TOP, 0.1, [("neofetch", "g")], 0.3, 0.5, "n")
-    px = 7
-    art_h = max(r for r, _ in art) + 1
     # centered on the output block, from the user@host line down to the color bar
-    tx, ty = 24, y0 + (len(rows) * 24 - 48) / 2 - art_h * px / 2
-    cells = []
-    for (r, c), color in sorted(art.items()):
-        if (r, c - 1) in art and art[r, c - 1] == color:
-            continue  # already covered by the run that starts further left
-        n = 1
-        while art.get((r, c + n)) == color:
-            n += 1
-        cells.append(f'<rect x="{tx + c * px}" y="{ty + r * px:.1f}" width="{n * px}" height="{px}" fill="{color}"/>')
-    cells = "".join(cells)
-    b.append(f'<g class="a" shape-rendering="crispEdges" style="{appear(0.95, 0.05)}">{cells}</g>')
+    ay = y0 + (len(rows) * 24 - 48) / 2 - 120
+    b.append(f'<g class="a" transform="translate(22 {ay:.1f})" style="{appear(0.95, 0.3)}">{mascot()}</g>')
     ix, vx = 300, 300 + 12 * cw(14)
     st = appear(0.95, 0.01)
     b.append(text(ix, y0 - 44, [("levi", "bl b"), ("@", "t"), ("kali", "bl b")], cls="a", style=st))
@@ -201,6 +193,18 @@ YYYYYYKKKKKKKKYYYYYY
     for i, c in enumerate(ansi):
         b.append(f'<rect class="a" x="{ix + i * 30}" y="{y0 + len(rows) * 24 - 6}" width="30" height="16" fill="{c}" style="{appear(1.0 + len(rows) * 0.05, 0.01)}"/>')
     return svg(h, b, "neofetch: " + ". ".join(f"{k} {v}" for k, v in rows) + ".")
+
+
+# 16 x 16 glyphs for the stats tiles
+ICONS = {
+    "grid": "".join(f'<rect x="{x}" y="{y}" width="7" height="7" rx="1.5" fill="{c}"/>'
+                    for x, y, c in [(0, 0, "#006d32"), (9, 0, "#39d353"), (0, 9, "#26a641"), (9, 9, "#0e4429")]),
+    "flame": '<path d="M8 0c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-6 1 1 2 2 2 4 1-2 1-5 1-8z" fill="#f0883e"/>',
+    "bolt": f'<path d="M9 0 2 9h5l-1 7 7-9H8l1-7z" fill="{CYN}"/>',
+    "star": f'<path d="M8 .5l2.2 4.8 5.3.6-3.9 3.6 1.1 5.2L8 12.1l-4.7 2.6 1.1-5.2L.5 5.9l5.3-.6z" fill="{YEL}"/>',
+    "repo": f'<rect x="2" y="1" width="12" height="14" rx="1.5" fill="none" stroke="{TXT}" stroke-width="1.5"/><path d="M5 1v14" stroke="{TXT}" stroke-width="1.5"/>',
+    "people": f'<circle cx="8" cy="5" r="3.2" fill="{BLU}"/><path d="M1.5 15.5c0-3.6 2.9-5.8 6.5-5.8s6.5 2.2 6.5 5.8z" fill="{BLU}"/>',
+}
 
 
 # ---------------------------------------------------------------- stats
@@ -259,15 +263,10 @@ def stats():
         return f"{n:,} {word}{'' if n == 1 else 's'}"
 
     coll = user["last"]
-    # two columns of key / value / note, typed out row by row
-    rows = [
-        [("contributions", f"{total:,}", f"since {since:%b} {since.year}"), ("stars", f"{stars:,}", "")],
-        [("current streak", plural(cur, "day"), ""), ("followers", f"{user['followers']['totalCount']:,}", "")],
-        [("longest streak", plural(best[0], "day"), f"{day(best[1])} - {day(best[2])}" if best[0] else ""),
-         ("public repos", f"{repos['totalCount']}", "")],
-        [("commits", f"{coll['totalCommitContributions']:,}", "last year"),
-         ("PRs / issues", f"{coll['totalPullRequestContributions']:,} / {coll['totalIssueContributions']:,}", "")],
-    ]
+    # six tiles: icon, odometer number, one-word label
+    tiles = [("grid", f"{total:,}", "contributions"), ("flame", f"{cur:,}", "day streak"),
+             ("bolt", f"{best[0]:,}", "best streak"), ("star", f"{stars:,}", "stars"),
+             ("repo", f"{repos['totalCount']:,}", "repos"), ("people", f"{user['followers']['totalCount']:,}", "followers")]
     # contributions per calendar month, the last 12 months
     months = [((now.year * 12 + now.month - 1 - k) // 12, (now.month - 1 - k) % 12 + 1) for k in range(11, -1, -1)]
     per = dict.fromkeys(months, 0)
@@ -281,36 +280,47 @@ def stats():
     step = (W - 48 + gap) / len(weeks)  # heatmap spans the full text width
     cell = round(step - gap, 1)
     start = TOP + 34
-    gtop = start + len(rows) * 26 + 14  # graph caption baseline
-    py0, ph = gtop + 18, 96  # plot top and height
+    tw, th, ty0 = (W - 48 - 5 * 10) / 6, 64, start - 16
+    py0, ph = ty0 + th + 34, 96  # plot top and height
     py1 = py0 + ph
     top = py1 + 44  # heatmap top, under the month labels
     h = round(top + 7 * step + 42)
     b = frame(h)
     b += prompt(24, TOP, 0.1, [("gh", "g"), (f" stats {USER}", "t")], 0.3, 0.6, "g")
-    for i, row in enumerate(rows):
-        y, st = start + i * 26, appear(1.0 + i * 0.12, 0.01)
-        for (k, v, note), (kx, kw) in zip(row, [(24, 17), (448, 15)]):
-            b.append(text(kx, y, [(k, "bl b")], cls="a", style=st))
-            b.append(text(kx + kw * cw(14), y, [(v, "h b")], cls="a", style=st))
-            if note:
-                b.append(text(kx + 30 * cw(14), y, [(note, "d")], cls="a", style=st))
+    lh, nfs = 28, 22  # odometer line height, number size
+    rolls = []
+    for i, (ic, num, label) in enumerate(tiles):
+        x, t = 24 + i * (tw + 10), 0.9 + i * 0.1
+        b.append(f'<g class="a" style="{appear(t, 0.2)}"><rect x="{x:.1f}" y="{ty0}" width="{tw:.1f}" height="{th}" rx="6" fill="{BAR}" stroke="{LINE}"/>'
+                 f'<g transform="translate({x + 12:.1f} {ty0 + 11})">{ICONS[ic]}</g>'
+                 + text(x + 34, ty0 + 24, [(label, "d")], fs=11)
+                 + f'<clipPath id="tc{i}"><rect x="{x:.1f}" y="{ty0 + 34}" width="{tw:.1f}" height="{lh}"/></clipPath><g clip-path="url(#tc{i})">')
+        base = ty0 + 34 + lh - 7
+        for j, ch in enumerate(num):
+            cx = x + 12 + j * cw(nfs)
+            if not ch.isdigit():
+                b.append(text(cx, base, [(ch, "h b")], fs=nfs))
+                continue
+            # odometer: the column rolls up through a full cycle and lands on the digit (its resting place)
+            d = int(ch)
+            spans = "".join(f'<tspan x="{cx:.1f}" y="{base - (10 + d - k) * lh}">{k % 10}</tspan>' for k in range(11 + d))
+            rolls.append(d)
+            b.append(f'<text class="h b roll" font-size="{nfs}" style="animation:r{d} 1.4s cubic-bezier(.2,.7,.2,1) {t + 0.15 + j * 0.06:.2f}s both">{spans}</text>')
+        b.append("</g></g>")
+    b.append("<style>" + "".join(f"@keyframes r{d}{{from{{transform:translateY({(10 + d) * lh}px)}}}}" for d in sorted(set(rolls))) + "</style>")
 
     # ---- monthly contributions: gridlines, then the line draws itself, then area and dots
-    tg = 1.0 + len(rows) * 0.12
+    tg = 1.6
     top_v = max(series) or 1
     mag = 10 ** math.floor(math.log10(top_v))
     ymax = next(f * mag for f in (1, 2, 2.5, 5, 10) if f * mag >= top_v)
-    px0, px1 = 24 + 6 * cw(11), W - 30
+    px0, px1 = 36, W - 36
     xs = [px0 + i * (px1 - px0) / (len(series) - 1) for i in range(len(series))]
     ys = [py1 - v / ymax * ph for v in series]
     gst = appear(tg, 0.2)
-    b.append(text(24, gtop, [("contributions per month", "d")], fs=12, cls="a", style=gst))
     for f in (0, 0.5, 1):
         gy = py1 - f * ph
-        label = f"{ymax * f:g}"
         b.append(f'<line class="a" x1="{px0}" y1="{gy:.1f}" x2="{px1}" y2="{gy:.1f}" stroke="{LINE}" stroke-dasharray="2 4" style="{gst}"/>')
-        b.append(text(px0 - 8 - len(label) * cw(11), gy + 4, [(label, "d")], fs=11, cls="a", style=gst))
     for i, (yy, mm) in enumerate(months):
         lab = dt.date(yy, mm, 1).strftime("%b")
         b.append(text(xs[i] - len(lab) * cw(11) / 2, py1 + 20, [(lab, "d")], fs=11, cls="a", style=gst))
@@ -414,7 +424,6 @@ def stats():
     for i, c in enumerate(levels):
         b.append(f'<rect x="{lx + i * (cell + gap)}" y="{ly}" width="{cell}" height="{cell}" rx="2" fill="{c}"/>')
     b.append(text(lx + len(levels) * (cell + gap) + 4, ly + 9, [("more", "d")], fs=12))
-    b.append(text(24, ly + 9, [(f"{user['last']['contributionCalendar']['totalContributions']:,} contributions in the last year", "d")], fs=12))
     return svg(h, b, f"GitHub stats. {total:,} contributions since {since:%B %Y}. Current streak {plural(cur, 'day')}, "
                      f"longest streak {plural(best[0], 'day')}. {repos['totalCount']} public repos, {plural(stars, 'star')}, "
                      f"{plural(user['followers']['totalCount'], 'follower')}. {coll['totalCommitContributions']:,} commits, "
