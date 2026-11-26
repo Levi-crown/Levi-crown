@@ -115,7 +115,7 @@ LOGOS = {p.stem: re.search(r' d="([^"]+)"', p.read_text(encoding="utf-8")).group
 
 def mascot():
     """A shaded, 3D-looking Tux in a GitHub tee holding the Apple and Android logos, the Kali dragon glowing behind.
-    Drawn in a 250 x 240 box. The logos are extruded (stacked offset copies) and float; Tux blinks; the glow breathes."""
+    Drawn in a 250 x 240 box. The logos are extruded (stacked offset copies); only the eyes move (Tux blinks)."""
     def radial(id_, stops, cx=".35", cy=".3", r=".75"):
         return (f'<radialGradient id="{id_}" cx="{cx}" cy="{cy}" r="{r}">'
                 + "".join(f'<stop offset="{o}" stop-color="{c}"/>' for o, c in stops) + "</radialGradient>")
@@ -136,35 +136,34 @@ def mascot():
             + linear("mKali", [(0, "#6aa8ff"), (1, "#1d4ea6")])
             + '<filter id="mDrop" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="3.5" flood-color="#000" flood-opacity=".55"/></filter>'
             + '<filter id="mBlur"><feGaussianBlur stdDeviation="5"/></filter>'
-            + f'<path id="mA" transform="translate(22 136) scale(2.4)" d="{LOGOS["apple"]}"/>'
-            + f'<path id="mD" transform="translate(158 120) scale(.6)" d="{LOGOS["android"]}"/>'
+            + f'<path id="mA" transform="translate(20 144) scale(2.2)" d="{LOGOS["apple"]}"/>'
+            + f'<path id="mD" transform="translate(176 136) scale(.5)" d="{LOGOS["android"]}"/>'
             + "</defs>")
+    # only the eyes move
     css = ("@keyframes wink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}"
-           "@keyframes hop{50%{transform:translateY(-5px)}}@keyframes breathe{50%{opacity:.35}}"
-           ".wink{transform-box:fill-box;transform-origin:center;animation:wink 4s infinite}"
-           ".hop{animation:hop 2s ease-in-out infinite}.hop2{animation:hop 2s ease-in-out 1s infinite}"
-           ".glow{animation:breathe 4s ease-in-out infinite}")
+           ".wink{transform-box:fill-box;transform-origin:center;animation:wink 4s infinite}")
 
-    def extrude(ref, face, side, depth=6):
+    def extrude(ref, face, side, depth=4):
         # stacked copies, darkest at the back, give the flat logo a thickness; the face sits on top
-        layers = "".join(f'<use href="#{ref}" transform="translate({i * .7:.1f} {i * .9:.1f})" fill="{side}"/>' for i in range(depth, 0, -1))
+        layers = "".join(f'<use href="#{ref}" transform="translate({i * .5:.1f} {i * .7:.1f})" fill="{side}"/>' for i in range(depth, 0, -1))
         return f'<g filter="url(#mDrop)">{layers}<use href="#{ref}" fill="url(#{face})"/></g>'
 
-    backdrop = (f'<circle class="glow" cx="125" cy="112" r="112" fill="url(#mGlow)" opacity=".55"/>'
+    backdrop = (f'<circle cx="125" cy="112" r="112" fill="url(#mGlow)" opacity=".55"/>'
                 f'<path transform="translate(-4 -14) scale(10.8)" d="{LOGOS["kali"]}" fill="url(#mKali)" opacity=".95"/>')
     body = "url(#mBody)"
     shirt = "url(#mShirt)"
 
-    def flipper(cx, angle, side):
-        # flipper hangs from the shoulder; its top is covered by the tee's short sleeve
-        clip = f"mF{side}"
-        return (f'<g transform="rotate({angle} {cx} 130)"><clipPath id="{clip}"><ellipse cx="{cx}" cy="158" rx="12" ry="30"/></clipPath>'
-                f'<ellipse cx="{cx}" cy="158" rx="12" ry="30" fill="{body}"/>'
-                f'<g clip-path="url(#{clip})"><rect x="{cx - 13}" y="126" width="26" height="20" fill="{shirt}"/>'
-                f'<path d="M{cx - 13} 145q13 4 26 0" stroke="#0b0d10" stroke-width="2" fill="none"/></g></g>')
-
+    # arms: a thick stroke from inside the torso out to behind each logo; the sleeve is the first stretch of
+    # the same path in shirt colour, so it follows the arm and its cuff sits square across it
+    arm_paths = ("M96 140Q70 152 54 182", "M154 140Q180 152 196 182")
+    arms = "".join(f'<path d="{d}" fill="none" stroke="{body}" stroke-width="22" stroke-linecap="round"/>' for d in arm_paths)
+    # masked to outside the torso, so the sleeve grows out of the shirt's side seam instead of sitting on it like a patch
+    sleeves = ('<mask id="mOut"><rect width="250" height="240" fill="#fff"/><ellipse cx="125" cy="152" rx="51" ry="66" fill="#000"/></mask>'
+               '<g mask="url(#mOut)">'
+               + "".join(f'<path d="{d}" pathLength="1" stroke-dasharray=".42 1" fill="none" stroke="{shirt}" stroke-width="26"/>'
+                         for d in arm_paths) + "</g>")
     tux = (f'<ellipse cx="125" cy="228" rx="74" ry="8" fill="#000" opacity=".5" filter="url(#mBlur)"/>'
-           f'<g filter="url(#mDrop)">'
+           f'<g filter="url(#mDrop)">{arms}'
            f'<ellipse cx="125" cy="152" rx="53" ry="68" fill="{body}"/>'
            f'<ellipse cx="125" cy="92" rx="38" ry="36" fill="{body}"/>'
            # the tee follows the body's curve: clipped to the torso, hem curving round the hips
@@ -172,8 +171,7 @@ def mascot():
            f'<path d="M60 124Q125 108 190 124V194Q125 212 60 194z" fill="{shirt}"/>'
            f'<path d="M66 193Q125 210 184 193" fill="none" stroke="#0b0d10" stroke-width="2.5"/>'
            f'<path d="M80 130c-4 20-4 44 2 62M170 130c4 20 4 44-2 62" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="3"/></g>'
-           # arms in front of the torso, reaching down to the logos
-           f'{flipper(74, 10, "L")}{flipper(176, -10, "R")}'
+           f'{sleeves}'
            f'<path d="M106 120q19 14 38 0" fill="none" stroke="#1f242b" stroke-width="4" stroke-linecap="round"/>'
            f'<path transform="translate(106 138) scale(1.6)" d="{LOGOS["github"]}" fill="#f0f3f6"/>'
            f'<ellipse cx="112" cy="72" rx="14" ry="7" transform="rotate(-25 112 72)" fill="#fff" opacity=".12"/>'
@@ -185,11 +183,11 @@ def mascot():
            f'<path d="M111 107c8 3 20 3 28 0" fill="none" stroke="#8a5200" stroke-width="1.2"/>'
            f'<ellipse cx="102" cy="216" rx="24" ry="10" fill="url(#mGold)"/><ellipse cx="148" cy="216" rx="24" ry="10" fill="url(#mGold)"/>'
            f'</g>')
-    logos = (f'<g class="hop">{extrude("mA", "mApple", "#6b7480")}</g>'
-             f'<g class="hop2">{extrude("mD", "mDroid", "#0f7a3f")}</g>')
-    # the flipper tip curls round the front of each logo, so Tux is gripping it, not standing beside it
-    grip = (f'<path d="M58 186c4-9 12-14 20-12 4 2 4 7 0 10-6 4-13 6-20 2z" fill="{body}" filter="url(#mDrop)"/>'
-            f'<path d="M192 186c-4-9-12-14-20-12-4 2-4 7 0 10 6 4 13 6 20 2z" fill="{body}" filter="url(#mDrop)"/>')
+    logos = extrude("mA", "mApple", "#6b7480") + extrude("mD", "mDroid", "#0f7a3f")
+    # the flipper ends cup each logo from the front and below, so Tux is holding it, not standing beside it
+    grip = "".join(f'<ellipse cx="{x}" cy="190" rx="16" ry="10" transform="rotate({a} {x} 190)" fill="{body}" filter="url(#mDrop)"/>'
+                   f'<ellipse cx="{x - 3 * a / abs(a)}" cy="187" rx="7" ry="2.5" transform="rotate({a} {x} 190)" fill="#fff" opacity=".12"/>'
+                   for x, a in ((60, -20), (200, 20)))
     return f"<style>{css}</style>{defs}{backdrop}{tux}{logos}{grip}"
 
 
