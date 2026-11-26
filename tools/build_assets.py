@@ -134,9 +134,10 @@ def mascot():
             + linear("mApple", [(0, "#ffffff"), (.5, "#d3d9e0"), (1, "#8d97a2")])
             + linear("mDroid", [(0, "#7cf5b4"), (.5, "#3ddc84"), (1, "#169a52")])
             + '<linearGradient id="mWin" gradientUnits="userSpaceOnUse" x1="107" y1="146" x2="143" y2="182"><stop offset="0" stop-color="#4cc2ff"/><stop offset="1" stop-color="#0067c0"/></linearGradient>'
+            + '<radialGradient id="mShade" cx=".42" cy=".38" r=".62"><stop offset=".55" stop-color="#12062e" stop-opacity="0"/><stop offset="1" stop-color="#12062e" stop-opacity=".55"/></radialGradient>'
             + linear("mKali", [(0, "#6aa8ff"), (1, "#1d4ea6")])
             + '<filter id="mDrop" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="3.5" flood-color="#000" flood-opacity=".55"/></filter>'
-            + '<filter id="mBlur"><feGaussianBlur stdDeviation="5"/></filter>'
+            + '<filter id="mBlur" x="-50%" y="-150%" width="200%" height="400%"><feGaussianBlur stdDeviation="5"/></filter>'
             + f'<path id="mA" transform="translate(12 126) scale(2.2)" d="{LOGOS["apple"]}"/>'
             + f'<path id="mD" transform="translate(176 122) scale(.48)" d="{LOGOS["android"]}"/>'
             + "</defs>")
@@ -183,7 +184,9 @@ def mascot():
            f'<ellipse cx="125" cy="94" rx="44.5" ry="41.5" fill="none" stroke="#3a1a78" stroke-opacity=".45" stroke-width="1"/>'
            f'<path d="M66 193Q125 210 184 193" fill="none" stroke="#2a1158" stroke-width="2.5"/>'
            f'<path d="M80 130c-4 20-4 44 2 62M170 130c4 20 4 44-2 62" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="3"/></g>'
-           + "".join(f'<rect x="{107 + dx}" y="{146 + dy}" width="17" height="17" rx="1" fill="url(#mWin)"/>' for dx in (0, 19) for dy in (0, 19))
+           # the print takes the tee's light: slightly translucent, then the same edge shading laid over tee and print
+           + '<g opacity=".9">' + "".join(f'<rect x="{107 + dx}" y="{146 + dy}" width="17" height="17" rx="1" fill="url(#mWin)"/>' for dx in (0, 19) for dy in (0, 19)) + "</g>"
+           + '<ellipse cx="125" cy="152" rx="53" ry="68" fill="url(#mShade)" clip-path="url(#mTorso)"/>'
            + f'<ellipse cx="125" cy="92" rx="38" ry="36" fill="{body}"/>'
            f'<path d="M100 98c0-16 10-25 25-25s25 9 25 25c0 13-11 21-25 21s-25-8-25-21z" fill="url(#mFace)"/>'
            f'<g class="wink"><ellipse cx="115" cy="92" rx="7" ry="9" fill="url(#mEye)"/><ellipse cx="135" cy="92" rx="7" ry="9" fill="url(#mEye)"/>'
