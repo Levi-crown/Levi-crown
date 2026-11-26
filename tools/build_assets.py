@@ -330,7 +330,7 @@ def stats():
         x, t = 24 + i * (tw + 10), 0.9 + i * 0.1
         b.append(f'<g class="a" style="{appear(t, 0.2)}"><rect x="{x:.1f}" y="{ty0}" width="{tw:.1f}" height="{th}" rx="6" fill="{BAR}" stroke="{LINE}"/>'
                  f'<g transform="translate({x + 12:.1f} {ty0 + 11})">{ICONS[ic]}</g>'
-                 + text(x + 34, ty0 + 24, [(label, "d")], fs=11)
+                 + text(x + 33, ty0 + 24, [(label, "d")], fs=10)  # 10px so "contributions" clears the tile edge
                  + f'<clipPath id="tc{i}"><rect x="{x:.1f}" y="{ty0 + 34}" width="{tw:.1f}" height="{lh}"/></clipPath><g clip-path="url(#tc{i})">')
         base = ty0 + 34 + lh - 7
         for j, ch in enumerate(num):
