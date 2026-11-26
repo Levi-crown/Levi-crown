@@ -4,7 +4,6 @@ text{font-family:'JetBrains Mono','Fira Code','Cascadia Mono',Consolas,'DejaVu S
 .r{fill:#e5534b} .g{fill:#57ab5a} .y{fill:#daaa3f} .bl{fill:#539bf5} .m{fill:#b083f0} .c{fill:#39c5cf}
 .a{opacity:0}
 @keyframes in{to{opacity:1}}
-@keyframes blink{0%{opacity:1}50%{opacity:0}}
 @keyframes vis{0%,100%{opacity:1}}
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important} .a{opacity:1!important} .cv,.cur{display:none}

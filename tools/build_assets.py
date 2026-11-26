@@ -2,8 +2,6 @@
 
 usage: python tools/build_assets.py assets   (also updates image links in README.md)
 """
-import base64
-import colorsys
 import datetime as dt
 import hashlib
 import json
@@ -15,7 +13,6 @@ import urllib.request
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-ICONS = Path(__file__).parent / "icons"
 OUT = Path(sys.argv[1])
 OUT.mkdir(parents=True, exist_ok=True)
 
@@ -26,23 +23,12 @@ RED, GRN, YEL, BLU, MAG, CYN = "#e5534b", "#57ab5a", "#daaa3f", "#539bf5", "#b08
 W = 840
 FONT = "'JetBrains Mono','Fira Code','Cascadia Mono',Consolas,'DejaVu Sans Mono',Menlo,monospace"
 
-# brand colors, lightened only where the official color disappears on a dark background
-BRAND = {
-    "python": "#4B8BBE", "openjdk": "#F89820", "csharp": "#B07CD8", "gnubash": "#4EAA25", "claude": "#D97757", "openai": HI,
-    "nousresearch": HI, "kimi": HI, "opencv": "#8C7CF0", "mediapipe": "#14A8B8",
-    "numpy": "#4DABCF", "espressif": "#E7352C", "arduino": "#00979D", "raspberrypi": "#C51A4A",
-    "kalilinux": "#4C8DF6", "archlinux": "#D64545", "parrotsecurity": "#15E0ED",
-    "android": "#3DDC84", "lineageos": "#23A9A9", "magisk": "#00AF9C", "cisco": "#1BA0D7", "wireshark": "#3A9BD9", "vscode": "#23A9F2", "visualstudio": "#A178DF", "androidstudio": "#3DDC84", "windows11": "#2D8FE6", "powershell": "#5391FE", "platformio": "#F5822A",
-    "flask": HI, "vercel": HI, "mqtt": HI, "burpsuite": "#FF6633", "metasploit": "#2596CD",
-}
-
 BASE_CSS = f"""
 text{{font-family:{FONT};white-space:pre}}
 .t{{fill:{TXT}}} .d{{fill:{DIM}}} .h{{fill:{HI}}} .b{{font-weight:700}}
 .r{{fill:{RED}}} .g{{fill:{GRN}}} .y{{fill:{YEL}}} .bl{{fill:{BLU}}} .m{{fill:{MAG}}} .c{{fill:{CYN}}}
 .a{{opacity:0}}
 @keyframes in{{to{{opacity:1}}}}
-@keyframes blink{{0%{{opacity:1}}50%{{opacity:0}}}}
 @keyframes vis{{0%,100%{{opacity:1}}}}
 @media (prefers-reduced-motion:reduce){{
   *{{animation:none!important}} .a{{opacity:1!important}} .cv,.cur{{display:none}}
@@ -123,104 +109,6 @@ def prompt(x, y, t, cmd=None, type_start=None, type_dur=None, kid=""):
     return out
 
 
-# full-color official logos; dark parts swapped for their light-background variant
-COLOR_FIX = {
-    "bash": {"#293138": "#d1d7e0"},
-    "kimi": {"currentColor": HI},
-    "mysql": {"#00618A": "#5FB0D6"},
-}
-
-
-# official logos that only exist as raster images: (file, image size, viewBox crop)
-IMAGES = {
-    "nmap": ("nmap.png", 256, "0 34 256 96"),  # the Nmap eye, without the wordmark
-    "sqlmap": ("sqlmap.png", 180, "0 0 180 180"),
-    "termux": ("termux.png", 192, "0 0 192 192"),
-}
-
-
-def icon(name, x, y, size=20):
-    if name in IMAGES:
-        file, px, crop = IMAGES[name]
-        data = base64.b64encode((ICONS / "img" / file).read_bytes()).decode()
-        # box matches the crop's aspect ratio, so nothing outside the crop can show
-        cx_, cy_, cw_, ch_ = map(float, crop.split())
-        bw = size + 6 if ch_ < cw_ else size
-        bh = bw * ch_ / cw_
-        return (f'<svg x="{x - 3}" y="{y + (size - bh) / 2:.1f}" width="{bw}" height="{bh:.1f}" viewBox="{crop}">'
-                f'<image href="data:image/png;base64,{data}" width="{px}" height="{px}"/></svg>')
-    if name == "oracle":
-        # the Oracle wordmark is unreadable at icon size; use its red "O" ring (oracle.com's site icon)
-        return (f'<ellipse cx="{x + size / 2}" cy="{y + size / 2}" rx="{size / 2 - 1.5}" ry="{size / 2 - 5}" '
-                f'fill="none" stroke="#C74634" stroke-width="3.2"/>')
-    color = ICONS / "color" / f"{name}.svg"
-    if color.exists():
-        raw = color.read_text(encoding="utf-8")
-        for a, b in COLOR_FIX.get(name, {}).items():
-            raw = raw.replace(f'"{a}"', f'"{b}"')
-        vb = re.search(r'viewBox="([^"]+)"', raw).group(1)
-        root = re.search(r"<svg[^>]*>", raw).group(0)
-        keep = "".join(f' {m.group(0)}' for m in re.finditer(r'\b(?:fill|fill-rule)="[^"]*"', root))
-        inner = re.sub(r"^.*?<svg[^>]*>|</svg>\s*$", "", raw.strip(), flags=re.S)
-        inner = f"<g{keep}>{inner}</g>"
-        inner = re.sub(r"<title>.*?</title>", "", inner)
-        # gradient ids would collide between logos once inlined
-        inner = re.sub(r'id="([^"]+)"', rf'id="{name}-\1"', inner)
-        inner = re.sub(r"url\(#([^)]+)\)", rf"url(#{name}-\1)", inner)
-        inner = re.sub(r'href="#([^"]+)"', rf'href="#{name}-\1"', inner)
-        return (f'<svg x="{x}" y="{y}" width="{size}" height="{size}" viewBox="{vb}" '
-                f'xmlns:xlink="http://www.w3.org/1999/xlink">{inner}</svg>')
-    raw = (ICONS / f"{name}.svg").read_text(encoding="utf-8")
-    vb = re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', raw)
-    s = size / float(vb.group(1))
-    rule = ' fill-rule="evenodd"' if 'fill-rule="evenodd"' in raw else ""
-    paths = "".join(re.sub(r'\sfill="[^"]*"', "", p)
-                    for p in re.findall(r"<path[^>]*?(?:/>|>.*?</path>)", raw, flags=re.S))
-    return f'<g transform="translate({x} {y}) scale({s:.4f})" fill="{BRAND[name]}"{rule}>{paths}</g>'
-
-
-def hsl(h, s, l):
-    r, g, b = colorsys.hls_to_rgb((h % 360) / 360, l, s)
-    return f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
-
-
-# ---------------------------------------------------------------- hero
-def hero():
-    banner = [
-        "██╗     ███████╗██╗   ██╗██╗",
-        "██║     ██╔════╝██║   ██║██║",
-        "██║     █████╗  ██║   ██║██║",
-        "██║     ██╔══╝  ╚██╗ ██╔╝██║",
-        "███████╗███████╗ ╚████╔╝ ██║",
-    ]
-    x = 24
-    h = TOP + 260
-    b = frame(h)
-    b += prompt(x, TOP, 0.2, [("figlet", "g"), (" levi ", "t"), ("|", "t"), (" lolcat", "g")], 0.6, 1.2, "a")
-    # lolcat: hue drifts along a diagonal; blocks drawn as rects since box glyphs render unevenly
-    cx, cy, top = 12, 17, TOP + 24
-    for i, ln in enumerate(banner):
-        shadow, solid = [], []
-        for c, ch in enumerate(ln):
-            if ch != "█":
-                continue
-            hue = 195 + c * 7 + i * 6
-            px, py = x + c * cx, top + i * cy
-            shadow.append(f'<rect x="{px + 4}" y="{py + 4}" width="{cx + 0.6}" height="{cy + 1}" fill="{hsl(hue, 0.55, 0.2)}"/>')
-            solid.append(f'<rect x="{px}" y="{py}" width="{cx + 0.6}" height="{cy + 1}" fill="{hsl(hue, 0.62, 0.64)}"/>')
-        b.append(f'<g class="a" shape-rendering="crispEdges" style="{appear(1.95 + i * 0.06, 0.05)}">'
-                 + "".join(shadow) + "".join(solid) + "</g>")
-    b += prompt(x, TOP + 150, 2.5, [("whoami", "g")], 2.8, 0.5, "b")
-    b.append(text(x, TOP + 180, [("Levi", "h b"), (". Full-stack developer with a curious mind. I build, break, debug, and learn.", "t")],
-                  cls="a", style=appear(3.45, 0.01)))
-    b.append(text(x, TOP + 202, [("Every mistake teaches me something, and every project gives me a reason to keep exploring.", "d")],
-                  cls="a", style=appear(3.55, 0.01)))
-    b += prompt(x, TOP + 234, 3.8)
-    b.append(f'<rect x="{x + PROMPT_LEN * cw(14):.1f}" y="{TOP + 234 - 12}" width="{cw(14):.1f}" height="16" fill="{TXT}" '
-             f'opacity="0" style="animation:blink 1.1s steps(1) 3.9s infinite"/>')
-    return svg(h, b, "Terminal: figlet levi piped to lolcat, whoami. Levi. Full-stack developer with a curious mind. I build, break, debug, and learn. Every mistake teaches me something, and every project gives me a reason to keep exploring.")
-
-
 # ---------------------------------------------------------------- neofetch
 def neofetch():
     # Tux as pixel art: ASCII penguins drift out of line when GitHub falls back to another font
@@ -249,16 +137,13 @@ YYYYYYKKKKKKKKYYYYYY
 .YYYYY........YYYYY.
 """.split()
     tux_colors = {"K": "#3d444d", "E": HI, "P": BG, "W": HI, "Y": YEL}
-    # only the headline items; the full list lives in the stack panel
     rows = [
-        ("Role", "full-stack developer"),
+        ("Role", "AI-native full-stack developer"),
         ("OS", "Kali Linux, Windows"),
-        ("Web", "HTML, CSS, JavaScript, PHP, Python"),
-        ("App", "Java, Kotlin, Dart, C#"),
-        ("Frameworks", "React, Tailwind CSS, Laravel, Django, Flask"),
         ("Android", "Android apps, AOSP, Magisk"),
         ("IoT", "ESP32, Arduino, Raspberry Pi"),
         ("Security", "Burp Suite, Metasploit, Nmap"),
+        ("AI", "Claude Code, Antigravity, Cursor"),
         ("Certs", "Cisco Ethical Hacker, Endpoint Security"),
         ("Level", "always learning"),
     ]
@@ -285,59 +170,6 @@ YYYYYYKKKKKKKKYYYYYY
     for i, c in enumerate(ansi):
         b.append(f'<rect class="a" x="{ix + i * 30}" y="{y0 + len(rows) * 24 - 6}" width="30" height="16" fill="{c}" style="{appear(1.0 + len(rows) * 0.05, 0.01)}"/>')
     return svg(h, b, "neofetch: " + ". ".join(f"{k} {v}" for k, v in rows) + ".")
-
-
-# ---------------------------------------------------------------- stack
-def stack():
-    web_lang = ("web-lang/", [("html5", "HTML"), ("css3", "CSS"), ("javascript", "JavaScript"), ("php", "PHP"),
-                              ("python", "Python")])
-    app_lang = ("app-lang/", [("java", "Java"), ("kotlin", "Kotlin"), ("dart", "Dart"), ("csharp", "C#")])
-    scripting = ("scripting/", [("bash", "Bash"), ("powershell", "PowerShell")])
-    frameworks = ("frameworks/", [("react", "React"), ("tailwindcss", "Tailwind CSS"), ("laravel", "Laravel"),
-                                  ("django", "Django"), ("flask", "Flask")])
-    # Backend-as-a-Service and hosting, named for what they are
-    baas = ("baas/", [("firebase", "Firebase"), ("supabase", "Supabase")])
-    hosting = ("hosting/", [("vercel", "Vercel")])
-    android = ("android/", [("android", "Android apps"), ("android", "AOSP"), ("lineageos", "Custom ROMs"),
-                            ("magisk", "Magisk modules"), ("termux", "Termux")])
-    iot = ("iot/", [("espressif", "ESP32"), ("espressif", "ESP8266"), ("arduino", "Arduino"),
-                              ("raspberrypi", "Raspberry Pi"), ("mqtt", "MQTT")])
-    mlcv = ("ml-cv/", [("opencv", "OpenCV"), ("mediapipe", "MediaPipe"), ("numpy", "NumPy")])
-    security = ("security/", [("burpsuite", "Burp Suite"), ("metasploit", "Metasploit"), ("sqlmap", "sqlmap"),
-                              ("nmap", "Nmap"), ("wireshark", "Wireshark")])
-    os_ = ("os/", [("kalilinux", "Kali Linux"), ("archlinux", "BlackArch"), ("parrotsecurity", "Parrot OS"),
-                   ("windows11", "Windows"), ("windows11", "Windows Server")])
-    ai = ("ai/", [("claude", "Claude"), ("openai", "Codex"), ("nousresearch", "Hermes"), ("kimi", "Kimi")])
-    tools = ("tools/", [("vscode", "Visual Studio Code"), ("visualstudio", "Visual Studio"),
-                        ("androidstudio", "Android Studio"), ("platformio", "PlatformIO"), ("figma", "Figma"),
-                        ("cisco", "Cisco Packet Tracer")])
-    database = ("database/", [("mysql", "MySQL"), ("microsoftsqlserver", "SQL Server"), ("oracle", "Oracle"),
-                              ("sqlite", "SQLite"), ("mongodb", "MongoDB")])
-    # a row is either three small directories side by side, or one wide directory whose items flow across three columns
-    layout = [[web_lang, app_lang, scripting], [frameworks], [database, baas, hosting], [android, iot, mlcv], [security],
-              [os_, ai, tools]]
-    colw, rowh, top = 264, 34, TOP + 20
-
-    def row_height(row):
-        n = max(len(items) for _, items in row) if len(row) == 3 else -(-len(row[0][1]) // 3)
-        return 26 + n * rowh + 22
-
-    h = top + sum(map(row_height, layout)) - 10
-    b = frame(h)
-    b += prompt(24, TOP, 0.1, [("ls", "g"), (" ~/stack", "t")], 0.3, 0.5, "s")
-    y0 = top
-    for row in layout:
-        for c, (label, items) in enumerate(row):
-            b.append(text(24 + c * colw, y0 + 14, [(label, "bl b")]))  # ls colors directories bold blue
-            for i, (ic, name) in enumerate(items):
-                # side-by-side directories stack their items; a wide one wraps them across the columns
-                col, line = (c, i) if len(row) == 3 else (i % 3, i // 3)
-                x, iy = 24 + col * colw, y0 + 30 + line * rowh
-                b.append(icon(ic, x, iy))
-                b.append(text(x + 30, iy + 14, name))
-        y0 += row_height(row)
-    return svg(h, b, "Stack. " + " ".join(f"{label.rstrip('/')}: {', '.join(n for _, n in items)}."
-                                         for row in layout for label, items in row))
 
 
 # ---------------------------------------------------------------- log
@@ -479,7 +311,7 @@ def stats():
 
 README = Path(__file__).parent.parent / "README.md"
 readme = README.read_text(encoding="utf-8")
-for name, fn in [("hero", hero), ("neofetch", neofetch), ("stack", stack), ("log", log), ("stats", stats)]:
+for name, fn in [("neofetch", neofetch), ("log", log), ("stats", stats)]:
     content = fn()
     if content is None:
         print("skipped", name, "(no GitHub token)")
