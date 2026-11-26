@@ -114,7 +114,7 @@ LOGOS = {p.stem: re.search(r' d="([^"]+)"', p.read_text(encoding="utf-8")).group
 
 
 def mascot():
-    """A shaded, 3D-looking Tux in a purple tee (Windows logo, small GitHub mark at the hem) holding the Apple and Android logos, the Kali dragon glowing behind.
+    """A shaded, 3D-looking Tux in a purple beanie (GitHub mark) and tee (Windows logo) holding the Apple and Android logos, the Kali dragon glowing behind.
     Drawn in a 250 x 240 box. The logos are extruded (stacked offset copies); only the eyes move (Tux blinks)."""
     def radial(id_, stops, cx=".35", cy=".3", r=".75"):
         return (f'<radialGradient id="{id_}" cx="{cx}" cy="{cy}" r="{r}">'
@@ -133,7 +133,7 @@ def mascot():
             + radial("mShirt", [(0, "#b58cf5"), (.55, "#7646d0"), (1, "#3a1a78")], cx=".35", cy=".2", r=".9")
             + linear("mApple", [(0, "#ffffff"), (.5, "#d3d9e0"), (1, "#8d97a2")])
             + linear("mDroid", [(0, "#7cf5b4"), (.5, "#3ddc84"), (1, "#169a52")])
-            + '<linearGradient id="mWin" gradientUnits="userSpaceOnUse" x1="107" y1="141" x2="143" y2="177"><stop offset="0" stop-color="#4cc2ff"/><stop offset="1" stop-color="#0067c0"/></linearGradient>'
+            + '<linearGradient id="mWin" gradientUnits="userSpaceOnUse" x1="107" y1="146" x2="143" y2="182"><stop offset="0" stop-color="#4cc2ff"/><stop offset="1" stop-color="#0067c0"/></linearGradient>'
             + linear("mKali", [(0, "#6aa8ff"), (1, "#1d4ea6")])
             + '<filter id="mDrop" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="3.5" flood-color="#000" flood-opacity=".55"/></filter>'
             + '<filter id="mBlur"><feGaussianBlur stdDeviation="5"/></filter>'
@@ -183,9 +183,8 @@ def mascot():
            f'<ellipse cx="125" cy="94" rx="44.5" ry="41.5" fill="none" stroke="#3a1a78" stroke-opacity=".45" stroke-width="1"/>'
            f'<path d="M66 193Q125 210 184 193" fill="none" stroke="#2a1158" stroke-width="2.5"/>'
            f'<path d="M80 130c-4 20-4 44 2 62M170 130c4 20 4 44-2 62" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="3"/></g>'
-           + "".join(f'<rect x="{107 + dx}" y="{141 + dy}" width="17" height="17" rx="1" fill="url(#mWin)"/>' for dx in (0, 19) for dy in (0, 19))
-           + f'<path transform="translate(117.8 183) scale(.6)" d="{LOGOS["github"]}" fill="#f0f3f6"/>'
-           f'<ellipse cx="125" cy="92" rx="38" ry="36" fill="{body}"/>'
+           + "".join(f'<rect x="{107 + dx}" y="{146 + dy}" width="17" height="17" rx="1" fill="url(#mWin)"/>' for dx in (0, 19) for dy in (0, 19))
+           + f'<ellipse cx="125" cy="92" rx="38" ry="36" fill="{body}"/>'
            f'<path d="M100 98c0-16 10-25 25-25s25 9 25 25c0 13-11 21-25 21s-25-8-25-21z" fill="url(#mFace)"/>'
            f'<g class="wink"><ellipse cx="115" cy="92" rx="7" ry="9" fill="url(#mEye)"/><ellipse cx="135" cy="92" rx="7" ry="9" fill="url(#mEye)"/>'
            f'<ellipse cx="116.5" cy="94" rx="3.4" ry="4.4" fill="#111"/><ellipse cx="133.5" cy="94" rx="3.4" ry="4.4" fill="#111"/>'
@@ -193,6 +192,18 @@ def mascot():
            f'<path d="M108 106c9-7 25-7 34 0-4 9-12 13-17 13s-13-4-17-13z" fill="url(#mGold)"/>'
            f'<path d="M111 107c8 3 20 3 28 0" fill="none" stroke="#8a5200" stroke-width="1.2"/>'
            f'<ellipse cx="102" cy="216" rx="24" ry="10" fill="url(#mGold)"/><ellipse cx="148" cy="216" rx="24" ry="10" fill="url(#mGold)"/>'
+           # knit beanie in the tee's purple: a domed crown over the head, a ribbed fold-up cuff across the brow
+           # with the GitHub mark on its front. Clipped to the head plus a dome above it, so it hugs the head and
+           # nothing sticks out past its sides
+           f'<clipPath id="mHat"><ellipse cx="125" cy="92" rx="38.5" ry="36.5"/><ellipse cx="125" cy="72" rx="31" ry="33"/></clipPath>'
+           f'<g clip-path="url(#mHat)"><path d="M80 86V30H170V86Z" fill="{shirt}"/>'
+           f'<path d="M106 44Q104 60 104 72M125 40V72M144 44Q146 60 146 72" fill="none" stroke="#2a1158" stroke-opacity=".3" stroke-width="1.5"/>'
+           f'<clipPath id="mCuff"><path d="M83 69Q125 58 167 69L168 86Q125 75 82 86Z"/></clipPath>'
+           f'<g clip-path="url(#mCuff)"><rect x="80" y="55" width="90" height="35" fill="#6a3cc4"/>'
+           + "".join(f'<path d="M{x} 55V90" stroke="#2a1158" stroke-opacity=".35" stroke-width="1.2"/>' for x in range(86, 168, 5))
+           + f'<rect x="80" y="55" width="90" height="35" fill="url(#mShirt)" opacity=".35"/></g>'
+           f'<path d="M83 69Q125 58 167 69" fill="none" stroke="#2a1158" stroke-opacity=".5" stroke-width="1"/></g>'
+           f'<path transform="translate(118.2 66.8) scale(.57)" d="{LOGOS["github"]}" fill="#f0f3f6"/>'
            f'</g>')
     logos = extrude("mA", "mApple", "#6b7480") + extrude("mD", "mDroid", "#0f7a3f")
     return f"<style>{css}</style>{defs}{backdrop}{logos}{arms}{tux}"
