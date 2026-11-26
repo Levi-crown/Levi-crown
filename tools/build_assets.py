@@ -27,12 +27,12 @@ FONT = "'JetBrains Mono','Fira Code','Cascadia Mono',Consolas,'DejaVu Sans Mono'
 BASE_CSS = f"""
 text{{font-family:{FONT};white-space:pre}}
 .t{{fill:{TXT}}} .d{{fill:{DIM}}} .h{{fill:{HI}}} .b{{font-weight:700}}
-.r{{fill:{RED}}} .g{{fill:{GRN}}} .y{{fill:{YEL}}} .bl{{fill:{BLU}}} .m{{fill:{MAG}}} .c{{fill:{CYN}}}
+.o{{fill:#f0883e}} .r{{fill:{RED}}} .g{{fill:{GRN}}} .y{{fill:{YEL}}} .bl{{fill:{BLU}}} .m{{fill:{MAG}}} .c{{fill:{CYN}}}
 .a{{opacity:0}}
 @keyframes in{{to{{opacity:1}}}}
 @keyframes vis{{0%,100%{{opacity:1}}}}
 @media (prefers-reduced-motion:reduce){{
-  *{{animation:none!important}} .a{{opacity:1!important}} .draw{{stroke-dashoffset:0!important}} .cv,.cur,.game,.ping{{display:none}} .roll{{transform:none!important}}
+  *{{animation:none!important}} .a{{opacity:1!important}} .draw{{stroke-dashoffset:0!important}} .cv,.cur,.game,.ping{{display:none}}
 }}
 """
 
@@ -232,18 +232,6 @@ def neofetch():
     return svg(h, b, "neofetch: " + ". ".join(f"{k} {v}" for k, v in rows) + ".")
 
 
-# 16 x 16 glyphs for the stats tiles
-ICONS = {
-    "grid": "".join(f'<rect x="{x}" y="{y}" width="7" height="7" rx="1.5" fill="{c}"/>'
-                    for x, y, c in [(0, 0, "#006d32"), (9, 0, "#39d353"), (0, 9, "#26a641"), (9, 9, "#0e4429")]),
-    "flame": '<path d="M8 0c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-6 1 1 2 2 2 4 1-2 1-5 1-8z" fill="#f0883e"/>',
-    "bolt": f'<path d="M9 0 2 9h5l-1 7 7-9H8l1-7z" fill="{CYN}"/>',
-    "star": f'<path d="M8 .5l2.2 4.8 5.3.6-3.9 3.6 1.1 5.2L8 12.1l-4.7 2.6 1.1-5.2L.5 5.9l5.3-.6z" fill="{YEL}"/>',
-    "repo": f'<rect x="2" y="1" width="12" height="14" rx="1.5" fill="none" stroke="{TXT}" stroke-width="1.5"/><path d="M5 1v14" stroke="{TXT}" stroke-width="1.5"/>',
-    "people": f'<circle cx="8" cy="5" r="3.2" fill="{BLU}"/><path d="M1.5 15.5c0-3.6 2.9-5.8 6.5-5.8s6.5 2.2 6.5 5.8z" fill="{BLU}"/>',
-}
-
-
 # ---------------------------------------------------------------- stats
 USER = "Levi-crown"
 CAL = "contributionCalendar{totalContributions weeks{contributionDays{date contributionCount}}}"
@@ -274,7 +262,7 @@ def stats():
     years = " ".join(f'y{y}:contributionsCollection(from:"{y}-01-01T00:00:00Z",to:"{min(now.year, y)}-12-31T23:59:59Z"){{{CAL}}}'
                      for y in range(first, now.year + 1))
     user = graphql(f'{{user(login:"{USER}"){{createdAt {years} last:contributionsCollection{{totalCommitContributions totalPullRequestContributions totalIssueContributions {CAL}}} '
-                   f'followers{{totalCount}} repositories(ownerAffiliations:OWNER,privacy:PUBLIC,first:100){{totalCount nodes{{stargazerCount}}}}}}}}')
+                   f'followers{{totalCount}} repositories(ownerAffiliations:OWNER,privacy:PUBLIC,first:100){{totalCount nodes{{name stargazerCount}}}}}}}}')
     days = sorted({d["date"]: d["contributionCount"]
                    for y in range(first, now.year + 1)
                    for w in user[f"y{y}"]["contributionCalendar"]["weeks"] for d in w["contributionDays"]}.items())
@@ -300,10 +288,7 @@ def stats():
         return f"{n:,} {word}{'' if n == 1 else 's'}"
 
     coll = user["last"]
-    # six tiles: icon, odometer number, one-word label
-    tiles = [("grid", f"{total:,}", "contributions"), ("flame", f"{cur:,}", "day streak"),
-             ("bolt", f"{best[0]:,}", "best streak"), ("star", f"{stars:,}", "stars"),
-             ("repo", f"{repos['totalCount']:,}", "repos"), ("people", f"{user['followers']['totalCount']:,}", "followers")]
+    followers = user["followers"]["totalCount"]
     # contributions per calendar month, the last 12 months
     months = [((now.year * 12 + now.month - 1 - k) // 12, (now.month - 1 - k) % 12 + 1) for k in range(11, -1, -1)]
     per = dict.fromkeys(months, 0)
@@ -314,44 +299,96 @@ def stats():
 
     weeks = coll["contributionCalendar"]["weeks"]
     gap = 3
-    step = (W - 48 + gap) / len(weeks)  # heatmap spans the full text width
+    step = (W - 72 + gap) / len(weeks)  # heatmap spans the contributions panel's inner width
     cell = round(step - gap, 1)
-    start = TOP + 34
-    tw, th, ty0 = (W - 48 - 5 * 10) / 6, 64, start - 16
-    py0, ph = ty0 + th + 34, 96  # plot top and height
+    # btop-style layout: three small monitor panels, then one panel holding the monthly graph and the heatmap
+    by, bh, bw = TOP + 24, 92, (W - 48 - 2 * 12) / 3
+    cy0 = by + bh + 18  # contributions panel top
+    py0, ph = cy0 + 30, 56  # plot top and height
     py1 = py0 + ph
-    top = py1 + 44  # heatmap top, under the month labels
-    h = round(top + 7 * step + 42)
+    top = py1 + 30  # heatmap top, under the month labels
+    h = round(top + 7 * step + 52)
     b = frame(h)
     b += prompt(24, TOP, 0.1, [("gh", "g"), (f" stats {USER}", "t")], 0.3, 0.6, "g")
-    lh, nfs = 28, 22  # odometer line height, number size
-    rolls = []
-    for i, (ic, num, label) in enumerate(tiles):
-        x, t = 24 + i * (tw + 10), 0.9 + i * 0.1
-        b.append(f'<g class="a" style="{appear(t, 0.2)}"><rect x="{x:.1f}" y="{ty0}" width="{tw:.1f}" height="{th}" rx="6" fill="{BAR}" stroke="{LINE}"/>'
-                 f'<g transform="translate({x + 12:.1f} {ty0 + 11})">{ICONS[ic]}</g>'
-                 + text(x + 33, ty0 + 24, [(label, "d")], fs=10)  # 10px so "contributions" clears the tile edge
-                 + f'<clipPath id="tc{i}"><rect x="{x:.1f}" y="{ty0 + 34}" width="{tw:.1f}" height="{lh}"/></clipPath><g clip-path="url(#tc{i})">')
-        base = ty0 + 34 + lh - 7
-        for j, ch in enumerate(num):
-            cx = x + 12 + j * cw(nfs)
-            if not ch.isdigit():
-                b.append(text(cx, base, [(ch, "h b")], fs=nfs))
-                continue
-            # odometer: the column rolls up through a full cycle and lands on the digit (its resting place)
-            d = int(ch)
-            spans = "".join(f'<tspan x="{cx:.1f}" y="{base - (10 + d - k) * lh}">{k % 10}</tspan>' for k in range(11 + d))
-            rolls.append(d)
-            b.append(f'<text class="h b roll" font-size="{nfs}" style="animation:r{d} 1.4s cubic-bezier(.2,.7,.2,1) {t + 0.15 + j * 0.06:.2f}s both">{spans}</text>')
-        b.append("</g></g>")
-    b.append("<style>" + "".join(f"@keyframes r{d}{{from{{transform:translateY({(10 + d) * lh}px)}}}}" for d in sorted(set(rolls))) + "</style>")
+    b.append("<style>@keyframes gy{from{transform:scaleY(0)}}@keyframes gx{from{transform:scaleX(0)}}"
+             "@keyframes pulse{50%{opacity:.4}}</style>")
+
+    def grow(axis, t):
+        origin = "bottom" if axis == "y" else "left"
+        return f"transform-box:fill-box;transform-origin:{origin};animation:g{axis} .6s cubic-bezier(.2,.7,.2,1) {t:.2f}s both"
+
+    def panel(x, y, w, hh, t, title, cls, value="", note=""):
+        """A btop panel: thin rounded border with the title (and an optional note on the right) set into its top edge."""
+        out = [f'<rect x="{x:.1f}" y="{y}" width="{w:.1f}" height="{hh}" rx="5" fill="none" stroke="{LINE}"/>']
+        parts = [(title, f"{cls} b")] + ([(f" {value}", "h b")] if value else [])
+        n = len("".join(q for q, _ in parts)) + 2
+        out.append(f'<rect x="{x + 10:.1f}" y="{y - 7}" width="{n * cw(12):.1f}" height="14" fill="{BG}"/>')
+        out.append(text(x + 10 + cw(12), y + 4, parts, fs=12))
+        if note:
+            nw = (len(note) + 2) * cw(11)
+            out.append(f'<rect x="{x + w - 10 - nw:.1f}" y="{y - 7}" width="{nw:.1f}" height="14" fill="{BG}"/>')
+            out.append(text(x + w - 10 - nw + cw(11), y + 4, [(note, "d")], fs=11))
+        return f'<g class="a" style="{appear(t, 0.25)}">{"".join(out)}</g>'
+
+    # ---- activity: htop meters for the last year's commits, pull requests and issues (log scale, so the small
+    # counts still show next to the commits)
+    x1 = 24
+    b.append(panel(x1, by, bw, bh, 0.9, "activity", "c", note="1y"))
+    act = [("commits", coll["totalCommitContributions"], "g"), ("PRs", coll["totalPullRequestContributions"], "bl"),
+           ("issues", coll["totalIssueContributions"], "m")]
+    slots = 19  # meter width in characters
+    top_a = max(v for _, v, _ in act) or 1
+    mx = x1 + 12 + 8 * cw(11)
+    for i, (lab, v, cls) in enumerate(act):
+        y, t = by + 30 + i * 22, 1.1 + i * 0.12
+        k = round(slots * math.log1p(v) / math.log1p(top_a)) if v else 0
+        num = f"{v:,}"
+        b.append(text(x1 + 12, y, [(lab, "d")], fs=11, cls="a", style=appear(t, 0.2)))
+        b.append(text(mx, y, [("[", "d"), (" " * slots, "t"), ("]", "d")], fs=11, cls="a", style=appear(t, 0.2)))
+        if k:
+            b.append(text(mx + cw(11), y, [("|" * k, cls)], fs=11, style=grow("x", t + 0.1)))
+        b.append(text(x1 + bw - 12 - len(num) * cw(11), y, [(num, "h b")], fs=11, cls="a", style=appear(t + 0.5, 0.2)))
+
+    # ---- streak: the last 30 days as bars; the running streak glows orange and breathes
+    x2 = x1 + bw + 12
+    b.append(panel(x2, by, bw, bh, 1.0, "streak", "o", f"{cur}d", f"best {best[0]}d"))
+    last30 = days[-30:]
+    end = len(last30) - 1 - (bool(last30) and last30[-1][1] == 0)  # today only counts once it has a contribution
+    top_s = max((n for _, n in last30), default=0) or 1
+    sw, base = (bw - 24) / max(1, len(last30)), by + bh - 12
+    for i, (d, n) in enumerate(last30):
+        hh = 3 if n == 0 else 8 + 46 * math.log1p(n) / math.log1p(top_s)
+        live = end - cur < i <= end
+        fill = LINE if n == 0 else "#f0883e" if live else "#26a641"
+        st = grow("y", 1.2 + i * 0.025) + (f",pulse 1.8s ease-in-out {2.2 + i * 0.05:.2f}s infinite" if live else "")
+        b.append(f'<rect x="{x2 + 12 + i * sw:.1f}" y="{base - hh:.1f}" width="{sw - 2:.1f}" height="{hh:.1f}" rx="1.5" '
+                 f'fill="{fill}" style="{st}"/>')
+
+    # ---- stars: the most-starred repos as bars
+    x3 = x2 + bw + 12
+    b.append(panel(x3, by, bw, bh, 1.1, "stars", "y", f"{stars:,}", f"{repos['totalCount']} repos · {followers} followers"))
+    starred = sorted((r for r in repos["nodes"] if r["stargazerCount"]), key=lambda r: -r["stargazerCount"])[:4]
+    top_r = starred[0]["stargazerCount"] if starred else 1
+    bx0, bx1 = x3 + 12 + 13 * cw(11), x3 + bw - 12 - 4 * cw(11) - 4
+    for i, r in enumerate(starred):
+        y, t = by + 28 + i * 17, 1.3 + i * 0.12
+        name = r["name"] if len(r["name"]) <= 12 else r["name"][:11] + "…"
+        num = f"{r['stargazerCount']:,}"
+        b.append(text(x3 + 12, y, [(name, "t")], fs=11, cls="a", style=appear(t, 0.2)))
+        b.append(f'<rect x="{bx0:.1f}" y="{y - 7}" width="{(bx1 - bx0) * r["stargazerCount"] / top_r:.1f}" height="6" rx="3" '
+                 f'fill="{YEL}" style="{grow("x", t + 0.1)}"/>')
+        b.append(text(x3 + bw - 12 - len(num) * cw(11), y, [(num, "h b")], fs=11, cls="a", style=appear(t + 0.5, 0.2)))
+    if not starred:
+        b.append(text(x3 + 12, by + 50, [("no stars yet", "d")], fs=11, cls="a", style=appear(1.3, 0.2)))
+
+    b.append(panel(24, cy0, W - 48, h - cy0 - 14, 1.4, "contributions", "g", f"{total:,}", f"since {since:%b %Y}"))
 
     # ---- monthly contributions: gridlines, then the line draws itself, then area and dots
     tg = 1.6
     top_v = max(series) or 1
     mag = 10 ** math.floor(math.log10(top_v))
     ymax = next(f * mag for f in (1, 2, 2.5, 5, 10) if f * mag >= top_v)
-    px0, px1 = 36, W - 36
+    px0, px1 = 44, W - 44
     xs = [px0 + i * (px1 - px0) / (len(series) - 1) for i in range(len(series))]
     ys = [py1 - v / ymax * ph for v in series]
     gst = appear(tg, 0.2)
@@ -360,7 +397,7 @@ def stats():
         b.append(f'<line class="a" x1="{px0}" y1="{gy:.1f}" x2="{px1}" y2="{gy:.1f}" stroke="{LINE}" stroke-dasharray="2 4" style="{gst}"/>')
     for i, (yy, mm) in enumerate(months):
         lab = dt.date(yy, mm, 1).strftime("%b")
-        b.append(text(xs[i] - len(lab) * cw(11) / 2, py1 + 20, [(lab, "d")], fs=11, cls="a", style=gst))
+        b.append(text(xs[i] - len(lab) * cw(10) / 2, py1 + 16, [(lab, "d")], fs=10, cls="a", style=gst))
     pts = " ".join(f"{x:.1f} {y:.1f}" for x, y in zip(xs, ys))
     b.append(f'<path class="a" d="M{xs[0]:.1f} {py1:.1f}L{pts}L{xs[-1]:.1f} {py1:.1f}Z" fill="#39d353" fill-opacity=".12" '
              f'style="{appear(tg + 1.0, 0.5)}"/>')
@@ -385,7 +422,7 @@ def stats():
     def shade(n):
         return levels[0] if n == 0 else levels[min(4, 1 + 4 * (n - 1) // peak)]
 
-    x0 = 24
+    x0 = 36
     t0 = tg + 1.4  # the heatmap fills in once the graph has drawn
     # chomper game: a muncher crawls the active weeks eating contribution cells while two viruses chase it;
     # the four busiest days are power pellets that leave the viruses crashed for a moment
@@ -456,7 +493,7 @@ def stats():
     b.append("</g>")
     ly = round(top + 7 * step + 16)
     cell, gap = 11, 3  # legend swatches stay small
-    lx = W - 24 - len(levels) * (cell + gap) - 4 - 4 * cw(12)
+    lx = W - 36 - len(levels) * (cell + gap) - 4 - 4 * cw(12)
     b.append(text(lx - 5 * cw(12), ly + 9, [("less", "d")], fs=12))
     for i, c in enumerate(levels):
         b.append(f'<rect x="{lx + i * (cell + gap)}" y="{ly}" width="{cell}" height="{cell}" rx="2" fill="{c}"/>')
