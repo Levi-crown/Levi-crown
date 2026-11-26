@@ -64,21 +64,19 @@ TOP = BAR_H + 30  # baseline of the first prompt line
 
 
 def frame(h, title=TITLE):
-    """A Linux terminal window: app icon on the left, title centered, minimize / maximize / close on the right."""
+    """A terminal window: macOS-style traffic lights on the left, a red (root) terminal icon beside the centered title."""
     out = [f'<rect x="0.5" y="0.5" width="{W - 1}" height="{h - 1}" rx="6" fill="{BG}" stroke="{LINE}"/>',
            f'<path d="M0.5 {BAR_H}V6.5a6 6 0 0 1 6-6h{W - 13}a6 6 0 0 1 6 6V{BAR_H}z" fill="{BAR}"/>',
            f'<line x1="0.5" y1="{BAR_H}" x2="{W - 0.5}" y2="{BAR_H}" stroke="{LINE}"/>']
-    # terminal app icon
-    out.append(f'<rect x="14.5" y="10.5" width="18" height="14" rx="2.5" fill="none" stroke="{DIM}" stroke-width="1.3"/>'
-               f'<path d="M18.5 14.5l3 2.5-3 2.5M23 20.5h5" fill="none" stroke="{TXT}" stroke-width="1.3" '
-               f'stroke-linecap="round" stroke-linejoin="round"/>')
-    tl = len(title) * cw(12)
-    out.append(text(W / 2 - tl / 2, 21.5, [(title, "d")], fs=12))
     cy = BAR_H / 2
-    controls = [f'M{W - 86} {cy + 4}h10',  # minimize
-                f'M{W - 56} {cy - 5}h10v10h-10z',  # maximize
-                f'M{W - 26} {cy - 5}l10 10M{W - 16} {cy - 5}l-10 10']  # close
-    out.append(f'<path d="{"".join(controls)}" fill="none" stroke="{TXT}" stroke-width="1.3" stroke-linecap="round"/>')
+    # close / minimize / zoom in the standard macOS colors
+    out += [f'<circle cx="{20 + i * 20}" cy="{cy}" r="6" fill="{c}"/>' for i, c in enumerate(["#ff5f57", "#febc2e", "#28c840"])]
+    tl = len(title) * cw(12)
+    tx = W / 2 - (tl + 26) / 2  # icon + gap + title, centered as one unit
+    out.append(f'<g transform="translate({tx - 14.5:.1f} 0)"><rect x="14.5" y="10.5" width="18" height="14" rx="2.5" fill="none" stroke="{RED}" stroke-width="1.3"/>'
+               f'<path d="M18.5 14.5l3 2.5-3 2.5M23 20.5h5" fill="none" stroke="{RED}" stroke-width="1.3" '
+               f'stroke-linecap="round" stroke-linejoin="round"/></g>')
+    out.append(text(tx + 26, 21.5, [(title, "d")], fs=12))
     return out
 
 
