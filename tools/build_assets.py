@@ -108,57 +108,76 @@ def prompt(x, y, t, cmd=None, type_start=None, type_dur=None, kid=""):
     return out
 
 
-# GitHub's mark (Octicons, MIT), 16x16
-OCTOCAT = ("M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94"
-           "-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07"
-           "-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27"
-           ".68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95"
-           ".29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z")
+# official logo paths (Simple Icons, CC0; Android robot from its brand artwork), read from tools/logos
+LOGOS = {p.stem: re.search(r' d="([^"]+)"', p.read_text(encoding="utf-8")).group(1)
+         for p in (Path(__file__).parent / "logos").glob("*.svg")}
 
 
 def mascot():
-    """Tux in a GitHub tee, the Apple logo in one flipper, the Android robot in the other, the Kali dragon behind.
-    Drawn in a 250 x 240 box; the dragon's head bobs, Tux blinks and both logos float."""
-    blue, deep, body, edge, ink, green, silver = "#367bf0", "#1f56c4", "#30363d", "#545d68", "#1b1f24", "#3ddc84", "#d0d7de"
-    css = ("@keyframes bob{50%{transform:rotate(-4deg)}}@keyframes wink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}"
-           "@keyframes hop{50%{transform:translateY(-4px)}}"
-           ".bob{transform-box:fill-box;transform-origin:10% 100%;animation:bob 3.2s ease-in-out infinite}"
+    """A shaded, 3D-looking Tux in a GitHub tee holding the Apple and Android logos, the Kali dragon glowing behind.
+    Drawn in a 250 x 240 box. The logos are extruded (stacked offset copies) and float; Tux blinks; the glow breathes."""
+    def radial(id_, stops, cx=".35", cy=".3", r=".75"):
+        return (f'<radialGradient id="{id_}" cx="{cx}" cy="{cy}" r="{r}">'
+                + "".join(f'<stop offset="{o}" stop-color="{c}"/>' for o, c in stops) + "</radialGradient>")
+
+    def linear(id_, stops, x2="1", y2="1"):
+        return (f'<linearGradient id="{id_}" x2="{x2}" y2="{y2}">'
+                + "".join(f'<stop offset="{o}" stop-color="{c}"/>' for o, c in stops) + "</linearGradient>")
+
+    defs = ("<defs>"
+            + radial("mBody", [(0, "#5b6472"), (.45, "#2a2f37"), (1, "#0b0d10")])
+            + radial("mFace", [(0, "#ffffff"), (.65, "#e3e8ee"), (1, "#a9b2bc")], cx=".42", cy=".35")
+            + radial("mEye", [(0, "#ffffff"), (.7, "#eef1f4"), (1, "#a7b0ba")], cx=".4", cy=".35")
+            + radial("mGold", [(0, "#ffd889"), (.55, "#f2a51f"), (1, "#a86200")], cx=".4", cy=".3")
+            + radial("mGlow", [(0, "#367bf0"), (.55, "#1d4ea6"), (1, BG)], cx=".5", cy=".5", r=".5")
+            + linear("mShirt", [(0, "#2b3139"), (1, "#0a0c0f")], x2="0")
+            + linear("mApple", [(0, "#ffffff"), (.5, "#d3d9e0"), (1, "#8d97a2")])
+            + linear("mDroid", [(0, "#7cf5b4"), (.5, "#3ddc84"), (1, "#169a52")])
+            + linear("mKali", [(0, "#6aa8ff"), (1, "#1d4ea6")])
+            + '<filter id="mDrop" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="3.5" flood-color="#000" flood-opacity=".55"/></filter>'
+            + '<filter id="mBlur"><feGaussianBlur stdDeviation="5"/></filter>'
+            + f'<path id="mA" transform="translate(22 136) scale(2.4)" d="{LOGOS["apple"]}"/>'
+            + f'<path id="mD" transform="translate(158 120) scale(.6)" d="{LOGOS["android"]}"/>'
+            + "</defs>")
+    css = ("@keyframes wink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}"
+           "@keyframes hop{50%{transform:translateY(-5px)}}@keyframes breathe{50%{opacity:.35}}"
            ".wink{transform-box:fill-box;transform-origin:center;animation:wink 4s infinite}"
-           ".hop{animation:hop 1.6s ease-in-out infinite}.hop2{animation:hop 1.6s ease-in-out .8s infinite}")
-    dragon = (f'<path d="M104 112C78 86 46 64 16 30c12 30 12 40 22 50-12 0-18 8-20 18 18-4 28 4 30 12-10 2-14 8-14 16 22-8 44-6 70 6z" fill="{deep}"/>'
-              f'<path d="M150 212c40 10 76 2 84-20 4-12-4-20-12-14" fill="none" stroke="{blue}" stroke-width="10" stroke-linecap="round"/>'
-              f'<path d="M224 176l-12-8 2 14z" fill="{blue}"/>'
-              f'<g class="bob"><path d="M140 140C196 124 214 92 198 52" fill="none" stroke="{blue}" stroke-width="20" stroke-linecap="round"/>'
-              f'<path d="M206 62l14-4-8 12zM210 86h14l-10 10zM200 108l12 6-14 4z" fill="{deep}"/>'
-              f'<path d="M214 42c-6-16-28-20-46-12l-22 8c-5 2-4 9 2 9l22 1c8 7 26 12 40 6z" fill="{blue}"/>'
-              f'<path d="M198 30l22-22-8 26zM208 36l28-12-20 20z" fill="{deep}"/>'
-              f'<path d="M150 45l20 1" stroke="{deep}" stroke-width="2"/><circle cx="186" cy="36" r="3" fill="{RED}"/></g>')
-    tux = (f'<ellipse cx="76" cy="150" rx="13" ry="32" transform="rotate(28 76 150)" fill="{body}" stroke="{edge}" stroke-width="1.5"/>'
-           f'<ellipse cx="164" cy="150" rx="13" ry="32" transform="rotate(-28 164 150)" fill="{body}" stroke="{edge}" stroke-width="1.5"/>'
-           f'<ellipse cx="120" cy="94" rx="36" ry="34" fill="{body}" stroke="{edge}" stroke-width="1.5"/>'
-           f'<ellipse cx="120" cy="150" rx="50" ry="66" fill="{body}" stroke="{edge}" stroke-width="1.5"/>'
-           f'<ellipse cx="120" cy="94" rx="34.5" ry="32.5" fill="{body}"/>'
-           f'<path d="M96 98c0-16 10-24 24-24s24 8 24 24c0 12-10 20-24 20s-24-8-24-20z" fill="{HI}"/>'
-           f'<g class="wink"><ellipse cx="110" cy="92" rx="6.5" ry="8.5" fill="#fff" stroke="{ink}" stroke-width="1.2"/>'
-           f'<ellipse cx="130" cy="92" rx="6.5" ry="8.5" fill="#fff" stroke="{ink}" stroke-width="1.2"/>'
-           f'<ellipse cx="111.5" cy="94" rx="3" ry="4" fill="{ink}"/><ellipse cx="128.5" cy="94" rx="3" ry="4" fill="{ink}"/></g>'
-           f'<path d="M82 124c24-8 52-8 76 0l6 62c-24 22-64 22-88 0z" fill="{BAR}" stroke="{LINE}" stroke-width="1.5"/>'
-           f'<path transform="translate(104 142) scale(2)" d="{OCTOCAT}" fill="{HI}"/>'
-           f'<path d="M104 106c8-6 24-6 32 0-4 8-12 12-16 12s-12-4-16-12z" fill="{YEL}"/>'
-           f'<path d="M106 107c8 3 20 3 28 0" fill="none" stroke="#b7862b" stroke-width="1.2"/>'
-           f'<ellipse cx="98" cy="214" rx="22" ry="9" fill="{YEL}"/><ellipse cx="142" cy="214" rx="22" ry="9" fill="{YEL}"/>')
-    apple = (f'<mask id="bite"><rect width="250" height="240" fill="#fff"/><circle cx="84" cy="168" r="9" fill="#000"/></mask>'
-             f'<g class="hop"><path mask="url(#bite)" d="M56 160c-7-8-22-7-25 8-3 16 8 32 18 32 3 0 4-2 7-2s4 2 7 2c10 0 20-14 22-26-2-14-17-21-29-14z" fill="{silver}"/>'
-             f'<path d="M57 154c-1-10 5-16 13-18 0 9-6 16-13 18z" fill="{silver}"/></g>')
-    android = (f'<g class="hop2" fill="{green}"><path d="M170 160a18 18 0 0 1 36 0z"/>'
-               f'<path d="M178 144l-5-8M198 144l5-8" stroke="{green}" stroke-width="2.5" stroke-linecap="round"/>'
-               f'<circle cx="180" cy="152" r="2.2" fill="{BG}"/><circle cx="196" cy="152" r="2.2" fill="{BG}"/>'
-               f'<rect x="170" y="163" width="36" height="28" rx="4"/><rect x="162" y="164" width="6" height="20" rx="3"/>'
-               f'<rect x="208" y="164" width="6" height="20" rx="3"/><rect x="178" y="188" width="6" height="12" rx="3"/>'
-               f'<rect x="192" y="188" width="6" height="12" rx="3"/></g>')
-    # flipper tips drawn over the logos so Tux grips them
-    grip = "".join(f'<ellipse cx="{x}" cy="176" rx="9" ry="7" fill="{body}" stroke="{edge}" stroke-width="1.5"/>' for x in (76, 164))
-    return f"<style>{css}</style>{dragon}{tux}{apple}{android}{grip}"
+           ".hop{animation:hop 2s ease-in-out infinite}.hop2{animation:hop 2s ease-in-out 1s infinite}"
+           ".glow{animation:breathe 4s ease-in-out infinite}")
+
+    def extrude(ref, face, side, depth=6):
+        # stacked copies, darkest at the back, give the flat logo a thickness; the face sits on top
+        layers = "".join(f'<use href="#{ref}" transform="translate({i * .7:.1f} {i * .9:.1f})" fill="{side}"/>' for i in range(depth, 0, -1))
+        return f'<g filter="url(#mDrop)">{layers}<use href="#{ref}" fill="url(#{face})"/></g>'
+
+    backdrop = (f'<circle class="glow" cx="125" cy="112" r="112" fill="url(#mGlow)" opacity=".55"/>'
+                f'<path transform="translate(-4 -14) scale(10.8)" d="{LOGOS["kali"]}" fill="url(#mKali)" opacity=".95"/>')
+    body = "url(#mBody)"
+    tux = (f'<ellipse cx="125" cy="228" rx="74" ry="8" fill="#000" opacity=".5" filter="url(#mBlur)"/>'
+           f'<g filter="url(#mDrop)">'
+           f'<ellipse cx="80" cy="150" rx="14" ry="34" transform="rotate(30 80 150)" fill="{body}"/>'
+           f'<ellipse cx="170" cy="150" rx="14" ry="34" transform="rotate(-30 170 150)" fill="{body}"/>'
+           f'<ellipse cx="125" cy="152" rx="53" ry="68" fill="{body}"/>'
+           f'<ellipse cx="125" cy="92" rx="38" ry="36" fill="{body}"/>'
+           f'<ellipse cx="112" cy="72" rx="14" ry="7" transform="rotate(-25 112 72)" fill="#fff" opacity=".12"/>'
+           f'<path d="M100 98c0-16 10-25 25-25s25 9 25 25c0 13-11 21-25 21s-25-8-25-21z" fill="url(#mFace)"/>'
+           f'<g class="wink"><ellipse cx="115" cy="92" rx="7" ry="9" fill="url(#mEye)"/><ellipse cx="135" cy="92" rx="7" ry="9" fill="url(#mEye)"/>'
+           f'<ellipse cx="116.5" cy="94" rx="3.4" ry="4.4" fill="#111"/><ellipse cx="133.5" cy="94" rx="3.4" ry="4.4" fill="#111"/>'
+           f'<circle cx="117.6" cy="92.4" r="1.2" fill="#fff"/><circle cx="134.6" cy="92.4" r="1.2" fill="#fff"/></g>'
+           # GitHub tee: shaded shirt, collar seam, the real GitHub mark on the chest
+           f'<path d="M84 126c26-9 56-9 82 0l7 64c-26 24-70 24-96 0z" fill="url(#mShirt)"/>'
+           f'<path d="M110 124c5 9 25 9 30 0" fill="none" stroke="#3d444d" stroke-width="2.2" stroke-linecap="round"/>'
+           f'<path d="M92 132c-2 18-2 36 0 52M158 132c2 18 2 36 0 52" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="2"/>'
+           f'<path transform="translate(106 140) scale(1.6)" d="{LOGOS["github"]}" fill="#f0f3f6"/>'
+           f'<path d="M108 106c9-7 25-7 34 0-4 9-12 13-17 13s-13-4-17-13z" fill="url(#mGold)"/>'
+           f'<path d="M111 107c8 3 20 3 28 0" fill="none" stroke="#8a5200" stroke-width="1.2"/>'
+           f'<ellipse cx="102" cy="216" rx="24" ry="10" fill="url(#mGold)"/><ellipse cx="148" cy="216" rx="24" ry="10" fill="url(#mGold)"/>'
+           f'</g>')
+    logos = (f'<g class="hop">{extrude("mA", "mApple", "#6b7480")}</g>'
+             f'<g class="hop2">{extrude("mD", "mDroid", "#0f7a3f")}</g>')
+    # flipper tips over the logos so Tux grips them
+    grip = "".join(f'<ellipse cx="{x}" cy="{y}" rx="10" ry="8" fill="{body}"/>' for x, y in ((72, 178), (178, 176)))
+    return f"<style>{css}</style>{defs}{backdrop}{tux}{logos}{grip}"
 
 
 # ---------------------------------------------------------------- neofetch
