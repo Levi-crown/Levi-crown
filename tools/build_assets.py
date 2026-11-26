@@ -135,7 +135,31 @@ YYYYYKWWWWWWWWKYYYYY
 YYYYYYKKKKKKKKYYYYYY
 .YYYYY........YYYYY.
 """.split()
-    tux_colors = {"K": "#3d444d", "E": HI, "P": BG, "W": HI, "Y": YEL}
+    # Tux wears a GitHub tee (belly rows become shirt), holds the Apple logo and the Android robot,
+    # and the Kali dragon coils behind him; layers are painted back to front
+    tux = [row.replace("W", "S") if 10 <= r <= 19 else row for r, row in enumerate(tux)]
+    octocat = [".O...O.", ".OOOOO.", "OOOOOOO", "OO.O.OO", "OOOOOOO", ".OO.OO."]
+    apple = ["......A..", ".....AA..", ".....A...", ".AAA.AAA.", "AAAAAAAAA", "AAAAAAA..", "AAAAAA...",
+             "AAAAAAA..", "AAAAAAAAA", ".AAAAAAA.", "..AA.AA.."]
+    android = [".G.....G.", "..GGGGG..", ".GGGGGGG.", ".GgGGGgG.", ".GGGGGGG.", ".........",
+               "GGGGGGGGG", "GGGGGGGGG", ".GGGGGGG.", "..G...G.."]
+    head = [".........d..d.", "........dDDdD.", "....DDDDDDDDD.", "..DDDDDeDDDDD.",
+            "DDDDDDDDDDDDd.", ".ddDDDDDDDDDd.", "....dd..DDDDd.", "........DDDDd."]
+    neck = [".DDDDdd", ".DDDDd.", "DDDDdd.", "DDDDd..", "DDDd...", "DDDd..."]
+    shoulder = ["DDDDDDDD", "DDDDDDd.", "DDDDDd..", "DDDd...."]  # neck dives behind Tux
+    wing = [".d..........", ".Dd.........", ".DDd...d....", ".DDDd.dD....", ".DDDDdDD....", ".DDDDDDDd...",
+            "..DDDDDDDD..", "...DDDDDDDDDDDDD", "....DDDDDDDDDDDD", "......DDDDDDDDDD"]
+    tail = ["..........d", ".........dD", "DDDDDDDDDDd", "dDDDDDDDdd."]  # out from behind the feet, curling up
+    layers = [(head, 23, 0), (neck, 30, 8), (shoulder, 25, 13), (wing, 0, 2), (tail, 26, 28),
+              (tux, 9, 9), (octocat, 15, 20), (apple, 2, 17), (android, 27, 18)]
+    art_colors = {"K": "#3d444d", "E": HI, "P": BG, "W": HI, "Y": YEL, "S": "#161b22", "O": HI,
+                  "D": "#367bf0", "d": "#1d4ea6", "e": RED, "A": "#c9d1d9", "G": "#3ddc84", "g": BG}
+    art = {}
+    for sprite, ox, oy in layers:
+        for r, row in enumerate(sprite):
+            for c, ch in enumerate(row):
+                if ch != ".":
+                    art[oy + r, ox + c] = art_colors[ch]
     rows = [
         ("Role", "AI-native full-stack developer"),
         ("OS", "Kali Linux, Windows"),
@@ -150,13 +174,21 @@ YYYYYYKKKKKKKKYYYYYY
     h = y0 + len(rows) * 24 + 40
     b = frame(h)
     b += prompt(24, TOP, 0.1, [("neofetch", "g")], 0.3, 0.5, "n")
-    px = 9
+    px = 7
+    art_h = max(r for r, _ in art) + 1
     # centered on the output block, from the user@host line down to the color bar
-    tx, ty = 46, y0 + (len(rows) * 24 - 48) / 2 - len(tux) * px / 2
-    cells = "".join(f'<rect x="{tx + c * px}" y="{ty + r * px:.1f}" width="{px}" height="{px}" fill="{tux_colors[ch]}"/>'
-                    for r, row in enumerate(tux) for c, ch in enumerate(row) if ch in tux_colors)
+    tx, ty = 24, y0 + (len(rows) * 24 - 48) / 2 - art_h * px / 2
+    cells = []
+    for (r, c), color in sorted(art.items()):
+        if (r, c - 1) in art and art[r, c - 1] == color:
+            continue  # already covered by the run that starts further left
+        n = 1
+        while art.get((r, c + n)) == color:
+            n += 1
+        cells.append(f'<rect x="{tx + c * px}" y="{ty + r * px:.1f}" width="{n * px}" height="{px}" fill="{color}"/>')
+    cells = "".join(cells)
     b.append(f'<g class="a" shape-rendering="crispEdges" style="{appear(0.95, 0.05)}">{cells}</g>')
-    ix, vx = 270, 270 + 12 * cw(14)
+    ix, vx = 300, 300 + 12 * cw(14)
     st = appear(0.95, 0.01)
     b.append(text(ix, y0 - 44, [("levi", "bl b"), ("@", "t"), ("kali", "bl b")], cls="a", style=st))
     b.append(text(ix, y0 - 24, [("-" * 9, "d")], cls="a", style=st))
