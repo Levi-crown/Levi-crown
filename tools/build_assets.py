@@ -5,6 +5,7 @@ usage: python tools/build_assets.py assets   (also updates image links in README
 import datetime as dt
 import hashlib
 import json
+import math
 import os
 import re
 import subprocess
@@ -31,7 +32,7 @@ text{{font-family:{FONT};white-space:pre}}
 @keyframes in{{to{{opacity:1}}}}
 @keyframes vis{{0%,100%{{opacity:1}}}}
 @media (prefers-reduced-motion:reduce){{
-  *{{animation:none!important}} .a{{opacity:1!important}} .cv,.cur,.game{{display:none}}
+  *{{animation:none!important}} .a{{opacity:1!important}} .draw{{stroke-dashoffset:0!important}} .cv,.cur,.game,.ping{{display:none}}
 }}
 """
 
@@ -199,8 +200,8 @@ def stats():
     # contributionsCollection spans at most one year, so ask for each calendar year
     years = " ".join(f'y{y}:contributionsCollection(from:"{y}-01-01T00:00:00Z",to:"{min(now.year, y)}-12-31T23:59:59Z"){{{CAL}}}'
                      for y in range(first, now.year + 1))
-    user = graphql(f'{{user(login:"{USER}"){{createdAt {years} last:contributionsCollection{{{CAL}}} '
-                   f'repositories(ownerAffiliations:OWNER,privacy:PUBLIC,first:100){{totalCount nodes{{stargazerCount}}}}}}}}')
+    user = graphql(f'{{user(login:"{USER}"){{createdAt {years} last:contributionsCollection{{totalCommitContributions totalPullRequestContributions totalIssueContributions {CAL}}} '
+                   f'followers{{totalCount}} repositories(ownerAffiliations:OWNER,privacy:PUBLIC,first:100){{totalCount nodes{{stargazerCount}}}}}}}}')
     days = sorted({d["date"]: d["contributionCount"]
                    for y in range(first, now.year + 1)
                    for w in user[f"y{y}"]["contributionCalendar"]["weeks"] for d in w["contributionDays"]}.items())
@@ -225,27 +226,79 @@ def stats():
     def plural(n, word):
         return f"{n:,} {word}{'' if n == 1 else 's'}"
 
+    coll = user["last"]
+    # two columns of key / value / note, typed out row by row
     rows = [
-        ("contributions", f"{total:,}", f"since {since:%b} {since.year}"),
-        ("current streak", plural(cur, "day"), ""),
-        ("longest streak", plural(best[0], "day"), f"{day(best[1])} - {day(best[2])}" if best[0] else ""),
-        ("public repos", f"{repos['totalCount']}", plural(stars, "star")),
+        [("contributions", f"{total:,}", f"since {since:%b} {since.year}"), ("stars", f"{stars:,}", "")],
+        [("current streak", plural(cur, "day"), ""), ("followers", f"{user['followers']['totalCount']:,}", "")],
+        [("longest streak", plural(best[0], "day"), f"{day(best[1])} - {day(best[2])}" if best[0] else ""),
+         ("public repos", f"{repos['totalCount']}", "")],
+        [("commits", f"{coll['totalCommitContributions']:,}", "last year"),
+         ("PRs / issues", f"{coll['totalPullRequestContributions']:,} / {coll['totalIssueContributions']:,}", "")],
     ]
-    weeks = user["last"]["contributionCalendar"]["weeks"]
+    # contributions per calendar month, the last 12 months
+    months = [((now.year * 12 + now.month - 1 - k) // 12, (now.month - 1 - k) % 12 + 1) for k in range(11, -1, -1)]
+    per = dict.fromkeys(months, 0)
+    for d, n in days:
+        if (d.year, d.month) in per:
+            per[d.year, d.month] += n
+    series = [per[m] for m in months]
+
+    weeks = coll["contributionCalendar"]["weeks"]
     gap = 3
     step = (W - 48 + gap) / len(weeks)  # heatmap spans the full text width
     cell = round(step - gap, 1)
     start = TOP + 34
-    top = start + len(rows) * 26 + 6
+    gtop = start + len(rows) * 26 + 14  # graph caption baseline
+    py0, ph = gtop + 18, 96  # plot top and height
+    py1 = py0 + ph
+    top = py1 + 44  # heatmap top, under the month labels
     h = round(top + 7 * step + 42)
     b = frame(h)
     b += prompt(24, TOP, 0.1, [("gh", "g"), (f" stats {USER}", "t")], 0.3, 0.6, "g")
-    vx, nx = 24 + 17 * cw(14), 24 + 30 * cw(14)
-    for i, (k, v, note) in enumerate(rows):
+    for i, row in enumerate(rows):
         y, st = start + i * 26, appear(1.0 + i * 0.12, 0.01)
-        b.append(text(24, y, [(k, "bl b")], cls="a", style=st))
-        b.append(text(vx, y, [(v, "h b")], cls="a", style=st))
-        b.append(text(nx, y, [(note, "d")], cls="a", style=st))
+        for (k, v, note), (kx, kw) in zip(row, [(24, 17), (448, 15)]):
+            b.append(text(kx, y, [(k, "bl b")], cls="a", style=st))
+            b.append(text(kx + kw * cw(14), y, [(v, "h b")], cls="a", style=st))
+            if note:
+                b.append(text(kx + 30 * cw(14), y, [(note, "d")], cls="a", style=st))
+
+    # ---- monthly contributions: gridlines, then the line draws itself, then area and dots
+    tg = 1.0 + len(rows) * 0.12
+    top_v = max(series) or 1
+    mag = 10 ** math.floor(math.log10(top_v))
+    ymax = next(f * mag for f in (1, 2, 2.5, 5, 10) if f * mag >= top_v)
+    px0, px1 = 24 + 6 * cw(11), W - 30
+    xs = [px0 + i * (px1 - px0) / (len(series) - 1) for i in range(len(series))]
+    ys = [py1 - v / ymax * ph for v in series]
+    gst = appear(tg, 0.2)
+    b.append(text(24, gtop, [("contributions per month", "d")], fs=12, cls="a", style=gst))
+    for f in (0, 0.5, 1):
+        gy = py1 - f * ph
+        label = f"{ymax * f:g}"
+        b.append(f'<line class="a" x1="{px0}" y1="{gy:.1f}" x2="{px1}" y2="{gy:.1f}" stroke="{LINE}" stroke-dasharray="2 4" style="{gst}"/>')
+        b.append(text(px0 - 8 - len(label) * cw(11), gy + 4, [(label, "d")], fs=11, cls="a", style=gst))
+    for i, (yy, mm) in enumerate(months):
+        lab = dt.date(yy, mm, 1).strftime("%b")
+        b.append(text(xs[i] - len(lab) * cw(11) / 2, py1 + 20, [(lab, "d")], fs=11, cls="a", style=gst))
+    pts = " ".join(f"{x:.1f} {y:.1f}" for x, y in zip(xs, ys))
+    b.append(f'<path class="a" d="M{xs[0]:.1f} {py1:.1f}L{pts}L{xs[-1]:.1f} {py1:.1f}Z" fill="#39d353" fill-opacity=".12" '
+             f'style="{appear(tg + 1.0, 0.5)}"/>')
+    b.append(f'<path class="draw" d="M{pts}" pathLength="1" fill="none" stroke="#39d353" stroke-width="2" stroke-linejoin="round" '
+             f'stroke-linecap="round" stroke-dasharray="1" stroke-dashoffset="1" style="animation:draw 1.2s ease-out {tg + 0.2:.2f}s forwards"/>')
+    for i, (x, y) in enumerate(zip(xs, ys)):
+        b.append(f'<circle class="a" cx="{x:.1f}" cy="{y:.1f}" r="4" fill="#39d353" stroke="{BG}" stroke-width="2" '
+                 f'style="{appear(tg + 0.2 + 1.2 * i / (len(xs) - 1), 0.1)}"/>')
+    # latest month keeps pinging: it is still being written
+    b.append(f'<circle class="ping" cx="{xs[-1]:.1f}" cy="{ys[-1]:.1f}" r="4" fill="none" stroke="#39d353" stroke-width="2" '
+             f'style="transform-box:fill-box;transform-origin:center;animation:ping 1.6s ease-out {tg + 1.5:.2f}s infinite;opacity:0"/>')
+    # direct labels only on the peak and the current month
+    for i in sorted({series.index(max(series)), len(series) - 1}):
+        lab = f"{series[i]:,}"
+        b.append(text(xs[i] - len(lab) * cw(11) / 2, ys[i] - 10, [(lab, "h b")], fs=11, cls="a", style=appear(tg + 1.4, 0.2)))
+    b.append("<style>@keyframes draw{to{stroke-dashoffset:0}}"
+             "@keyframes ping{0%{transform:scale(1);opacity:.8}100%{transform:scale(3);opacity:0}}</style>")
     # GitHub's dark-mode contribution greens
     levels = ["#2d333b", "#0e4429", "#006d32", "#26a641", "#39d353"]
     peak = max((d["contributionCount"] for w in weeks for d in w["contributionDays"]), default=0) or 1
@@ -254,7 +307,7 @@ def stats():
         return levels[0] if n == 0 else levels[min(4, 1 + 4 * (n - 1) // peak)]
 
     x0 = 24
-    t0 = 1.0 + len(rows) * 0.12
+    t0 = tg + 1.4  # the heatmap fills in once the graph has drawn
     # chomper game: a muncher crawls the active weeks eating contribution cells while two viruses chase it;
     # the four busiest days are power pellets that leave the viruses crashed for a moment
     first = next((wi for wi, w in enumerate(weeks) if any(d["contributionCount"] for d in w["contributionDays"])), 0)
@@ -331,7 +384,10 @@ def stats():
     b.append(text(lx + len(levels) * (cell + gap) + 4, ly + 9, [("more", "d")], fs=12))
     b.append(text(24, ly + 9, [(f"{user['last']['contributionCalendar']['totalContributions']:,} contributions in the last year", "d")], fs=12))
     return svg(h, b, f"GitHub stats. {total:,} contributions since {since:%B %Y}. Current streak {plural(cur, 'day')}, "
-                     f"longest streak {plural(best[0], 'day')}. {repos['totalCount']} public repos, {plural(stars, 'star')}.")
+                     f"longest streak {plural(best[0], 'day')}. {repos['totalCount']} public repos, {plural(stars, 'star')}, "
+                     f"{plural(user['followers']['totalCount'], 'follower')}. {coll['totalCommitContributions']:,} commits, "
+                     f"{coll['totalPullRequestContributions']:,} pull requests and {coll['totalIssueContributions']:,} issues in the last year. "
+                     "Contributions per month: " + ", ".join(f"{dt.date(y, m, 1):%b} {v:,}" for (y, m), v in zip(months, series)) + ".")
 
 
 README = Path(__file__).parent.parent / "README.md"
